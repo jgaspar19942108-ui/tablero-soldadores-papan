@@ -1,0 +1,250 @@
+<style>
+.cm { font-family: var(--font-anthropic-sans); color: var(--color-fg); display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.cm-head { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+.cm-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+.cm-take { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); max-width: 70rem; line-height: 1.5; }
+.cm-take b, .cm-take span.cm-n { color: var(--color-fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cm-bar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-lg); align-items: center; justify-content: space-between; }
+.cm-tabs, .cm-seg { display: flex; flex-wrap: wrap; gap: 2px; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 2px; }
+.cm-tabs button, .cm-seg button { font: inherit; font-size: var(--cds-font-size-caption); border: 0; background: transparent; color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: var(--cds-radius); cursor: pointer; }
+.cm-tabs button[aria-selected=true], .cm-seg button[aria-pressed=true] { background: var(--color-bg); color: var(--color-fg); box-shadow: 0 0 0 1px var(--color-border-line); }
+.cm-seg-wrap { display: flex; align-items: center; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.cm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: var(--cds-gap-md); }
+.cm-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-xs); min-height: 7rem; }
+.cm-tile-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.cm-tile-v { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.cm-tile-s { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.cm-up { color: var(--color-ok); } .cm-down { color: var(--color-bad); } .cm-warn { color: var(--color-warn); }
+.cm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: var(--cds-gap-md); }
+.cm-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-width: 0; }
+.cm-card.wide { grid-column: 1 / -1; }
+.cm-card h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.cm-note { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.cm-chart { position: relative; min-height: 260px; }
+.cm-chart svg { display: block; overflow: visible; }
+.cm-chart text { fill: var(--color-fg-muted); font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); }
+.cm-chart .lbl { fill: var(--color-fg); }
+.cm-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 5; display: none; font-variant-numeric: tabular-nums; }
+.cm-tip .h { color: var(--cds-text-secondary); margin-bottom: 2px; }
+.cm-tip .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+.cm-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.cm-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.cm-legend i.dash { height: 0; border-top: 2px dashed; border-radius: 0; width: 14px; vertical-align: 3px; }
+.cm-rank { display: flex; flex-direction: column; gap: 6px; min-height: 200px; }
+.cm-rank-row { display: grid; grid-template-columns: minmax(6rem, 13rem) 1fr 5.5rem; gap: var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); }
+.cm-rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-rank-name b { font-weight: 600; margin-right: 4px; }
+.cm-rank-track { height: 14px; background: color-mix(in srgb, var(--color-border-line) 45%, transparent); border-radius: 7px; overflow: hidden; }
+.cm-rank-fill { height: 100%; border-radius: 7px; }
+.cm-rank-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--color-fg); }
+.cm-rank-val small { color: var(--color-fg-muted); display: block; font-size: 0.7rem; }
+.cm-tablebox { max-height: 30rem; overflow: auto; border-top: 1px solid var(--color-border-line); }
+.cm-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.cm-table th { position: sticky; top: 0; background: var(--color-panel); text-align: right; font-weight: 500; color: var(--color-fg-muted); padding: 6px 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.cm-table th button { all: unset; cursor: pointer; }
+.cm-table th:first-child, .cm-table td:first-child, .cm-table th.t, .cm-table td.t { text-align: left; }
+.cm-table td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, var(--color-border-line) 60%, transparent); text-align: right; white-space: nowrap; }
+.cm-table tr.idle td { color: var(--color-fg-muted); }
+.cm-search { font: inherit; font-size: var(--cds-font-size-caption); padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); max-width: 16rem; }
+.cm-heat { overflow-x: auto; min-height: 120px; }
+.cm-heat table { border-collapse: separate; border-spacing: 3px; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.cm-heat th { font-weight: 500; color: var(--color-fg-muted); padding: 2px 6px; text-align: center; white-space: nowrap; }
+.cm-heat th.r { text-align: left; }
+.cm-heat td { min-width: 3.2rem; height: 1.8rem; text-align: center; border-radius: 4px; position: relative; color: var(--color-fg); }
+.cm-heat td.z { color: var(--color-fg-muted); }
+.cm-heat td.tot { font-weight: 600; background: transparent; }
+.cm-page[hidden] { display: none !important; }
+.cm-sec { display: flex; flex-direction: column; gap: var(--cds-gap-md); }
+.cm-sec h2 { margin: var(--cds-gap-sm) 0 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.cm-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.cm-fail::before { content: ''; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+@media (max-width: 560px) { .cm-rank-row { grid-template-columns: 7rem 1fr 4.5rem; } }
+</style>
+
+<div class="cm">
+  <div class="cm-head">
+    <h1 class="cm-title" id="titulo">Soldadores y tuberos · EMC Papan obra mecánica</h1>
+    <p class="cm-take" id="takeaway">
+      Corte al <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="fecha_corte" data-row="0" data-fmt="fecha">—</span>:
+      <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="avance" data-row="0" data-fmt="pct">—</span> de avance físico.
+      Al ritmo de las últimas 4 semanas (<span class="cm-n dash-skeleton" data-source="proyeccion" data-field="ritmo_4sem" data-row="0" data-fmt="int">—</span> pulg-Ø/semana)
+      el cierre sería el <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="fecha_estimada" data-row="0" data-fmt="fecha">—</span>,
+      <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="dias_desfase" data-row="0" data-fmt="absint">—</span> días
+      <span class="cm-desfase-word">—</span> de la meta del
+      <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="fecha_meta" data-row="0" data-fmt="fecha">—</span>.
+      Para llegar se necesitan <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="ritmo_necesario" data-row="0" data-fmt="int">—</span> pulg-Ø/semana:
+      unos <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="soldadores_necesarios" data-row="0" data-fmt="int">—</span> soldadores al rendimiento de esta semana
+      (hoy hay <span class="cm-n dash-skeleton" data-source="proyeccion" data-field="soldadores_activos" data-row="0" data-fmt="int">—</span> con clave activos).
+    </p>
+  </div>
+
+  <div class="cm-bar">
+    <div class="cm-tabs" role="tablist" aria-label="Secciones">
+      <button role="tab" data-tab="resumen" aria-selected="true">Resumen</button>
+      <button role="tab" data-tab="soldadores" aria-selected="false">Soldadores</button>
+      <button role="tab" data-tab="tuberos" aria-selected="false">Tuberos</button>
+      <button role="tab" data-tab="calidad" aria-selected="false">Calidad RT</button>
+    </div>
+    <div class="cm-seg-wrap" id="periodo-ctl">
+      <span>Periodo</span>
+      <div class="cm-seg" role="group" aria-label="Periodo">
+        <button data-per="semana" aria-pressed="true">Semana en curso</button>
+        <button data-per="4sem" aria-pressed="false">Últimas 4 semanas</button>
+        <button data-per="todo" aria-pressed="false">Todo el registro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESUMEN -->
+  <section class="cm-sec cm-page" id="resumen">
+    <div class="cm-tiles">
+      <div class="cm-tile" id="t-avance">
+        <div class="cm-tile-l">Avance físico (pulg-Ø soldadas / programa)</div>
+        <div class="cm-tile-v dash-skeleton" data-source="proyeccion" data-field="avance" data-row="0" data-fmt="pct">—</div>
+        <div class="cm-tile-s"><span data-source="proyeccion" data-field="pulg_soldadas" data-row="0" data-fmt="int">—</span> de <span data-source="proyeccion" data-field="pulg_total_programa" data-row="0" data-fmt="int">—</span> pulg-Ø</div>
+      </div>
+      <div class="cm-tile" id="t-pulg">
+        <div class="cm-tile-l">Pulg-Ø soldadas · <span class="cm-per-name">semana en curso</span></div>
+        <div class="cm-tile-v dash-skeleton cm-per" data-source="kpi_periodo" data-field="pulg_soldadas" data-where="periodo=semana" data-fmt="int">—</div>
+        <div class="cm-tile-s"><span class="cm-per cm-delta" data-source="kpi_periodo" data-field="cambio_vs_previo" data-where="periodo=semana" data-fmt="delta">—</span> <span class="cm-delta-l"></span></div>
+      </div>
+      <div class="cm-tile" id="t-ritmo">
+        <div class="cm-tile-l">Ritmo real · últimas 4 semanas</div>
+        <div class="cm-tile-v dash-skeleton" data-source="proyeccion" data-field="ritmo_4sem" data-row="0" data-fmt="int">—</div>
+        <div class="cm-tile-s">pulg-Ø/sem · necesario <span class="cm-nec" data-source="proyeccion" data-field="ritmo_necesario" data-row="0" data-fmt="int">—</span></div>
+      </div>
+      <div class="cm-tile" id="t-cierre">
+        <div class="cm-tile-l">Cierre estimado al ritmo actual</div>
+        <div class="cm-tile-v dash-skeleton" data-source="proyeccion" data-field="fecha_estimada" data-row="0" data-fmt="fecha">—</div>
+        <div class="cm-tile-s">Meta <span data-source="proyeccion" data-field="fecha_meta" data-row="0" data-fmt="fecha">—</span> · <span class="cm-desf" data-source="proyeccion" data-field="dias_desfase" data-row="0" data-fmt="dias">—</span></div>
+      </div>
+      <div class="cm-tile" id="t-gente">
+        <div class="cm-tile-l">Soldadores / tuberos activos · <span class="cm-per-name">semana en curso</span></div>
+        <div class="cm-tile-v"><span class="cm-per dash-skeleton" data-source="kpi_periodo" data-field="soldadores_activos" data-where="periodo=semana" data-fmt="int">—</span> / <span class="cm-per dash-skeleton" data-source="kpi_periodo" data-field="tuberos_activos" data-where="periodo=semana" data-fmt="int">—</span></div>
+        <div class="cm-tile-s"><span class="cm-per" data-source="kpi_periodo" data-field="pulg_soldador_dia" data-where="periodo=semana" data-fmt="dec">—</span> pulg-Ø por soldador-día</div>
+      </div>
+      <div class="cm-tile" id="t-backlog">
+        <div class="cm-tile-l">Juntas armadas sin soldar</div>
+        <div class="cm-tile-v dash-skeleton" data-source="proyeccion" data-field="backlog_juntas" data-row="0" data-fmt="int">—</div>
+        <div class="cm-tile-s"><span data-source="proyeccion" data-field="backlog_pulg" data-row="0" data-fmt="int">—</span> pulg-Ø listas para soldador</div>
+      </div>
+    </div>
+
+    <div class="cm-grid">
+      <div class="cm-card wide" id="card-curva">
+        <h3>Curva S: real, reprogramado y proyección al ritmo actual</h3>
+        <p class="cm-note">Pulgadas-Ø acumuladas. La proyección sigue el promedio de las últimas 4 semanas desde la fecha de corte.</p>
+        <div class="cm-legend" id="leg-curva"></div>
+        <div class="cm-chart dash-skeleton" id="ch-curva" data-source="curva_s curva_proyeccion" style="min-height:300px"></div>
+      </div>
+      <div class="cm-card" id="card-semanal">
+        <h3>Pulgadas-Ø soldadas por semana</h3>
+        <p class="cm-note">Semanas de lunes a domingo; la última va en curso. La línea marca el ritmo necesario para la meta.</p>
+        <div class="cm-chart dash-skeleton" id="ch-semanal" data-source="semanal proyeccion"></div>
+      </div>
+      <div class="cm-card" id="card-diario">
+        <h3>Armado contra soldado, últimos 28 días</h3>
+        <p class="cm-note">Si el armado (fit-up) va por debajo de lo soldado, los soldadores se quedan sin frente de trabajo.</p>
+        <div class="cm-legend" id="leg-diario"></div>
+        <div class="cm-chart dash-skeleton" id="ch-diario" data-source="diario"></div>
+      </div>
+      <div class="cm-card" id="card-resp">
+        <h3>Rendimiento por responsable · <span class="cm-per-name">semana en curso</span></h3>
+        <p class="cm-note">Personas con clave activas contra plantilla, y pulg-Ø por persona-día trabajado.</p>
+        <div class="cm-tablebox"><table class="cm-table" id="tb-resp" data-source="responsables" data-row-key="periodo,rol,responsable">
+          <thead><tr><th class="t" data-field="responsable">Responsable</th><th class="t" data-field="rol">Rol</th><th data-field="activos">Activos</th><th data-field="plantilla">Plantilla</th><th data-field="pulg">Pulg-Ø</th><th data-field="pulg_persona_dia">Pulg/persona-día</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="cm-card" id="card-serv">
+        <h3>Avance por servicio</h3>
+        <p class="cm-note">Pulg-Ø soldadas contra el total de la bitácora; ordenados por lo que falta.</p>
+        <div class="cm-rank" id="rk-serv" data-source="servicios"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOLDADORES -->
+  <section class="cm-sec cm-page" id="soldadores" hidden>
+    <div class="cm-tiles">
+      <div class="cm-tile"><div class="cm-tile-l">Soldadores con producción</div><div class="cm-tile-v cm-per dash-skeleton" data-source="kpi_periodo" data-field="soldadores_activos" data-where="periodo=semana" data-fmt="int">—</div><div class="cm-tile-s"><span class="cm-per-name">semana en curso</span></div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Pulg-Ø por soldador-día</div><div class="cm-tile-v cm-per dash-skeleton" data-source="kpi_periodo" data-field="pulg_soldador_dia" data-where="periodo=semana" data-fmt="dec">—</div><div class="cm-tile-s"><span class="cm-per" data-source="kpi_periodo" data-field="soldador_dias" data-where="periodo=semana" data-fmt="int">—</span> soldador-días trabajados</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas soldadas</div><div class="cm-tile-v cm-per dash-skeleton" data-source="kpi_periodo" data-field="juntas_soldadas" data-where="periodo=semana" data-fmt="int">—</div><div class="cm-tile-s"><span class="cm-per" data-source="kpi_periodo" data-field="pulg_soldadas" data-where="periodo=semana" data-fmt="int">—</span> pulg-Ø</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas soldadas con clave de soldador</div><div class="cm-tile-v cm-per dash-skeleton" data-source="kpi_periodo" data-field="pct_juntas_con_clave" data-where="periodo=semana" data-fmt="pct">—</div><div class="cm-tile-s"><span class="cm-per" data-source="kpi_periodo" data-field="juntas_sin_clave" data-where="periodo=semana" data-fmt="int">—</span> juntas sin clave en la bitácora</div></div>
+    </div>
+    <div class="cm-grid">
+      <div class="cm-card" id="card-rank-s">
+        <h3>Ranking de soldadores · <span class="cm-per-name">semana en curso</span></h3>
+        <p class="cm-note">Pulg-Ø soldadas; a la derecha, pulg-Ø por día trabajado. En gris, plantilla sin producción.</p>
+        <div class="cm-legend" id="leg-frente-s"></div>
+        <div class="cm-rank" id="rk-sold" data-source="soldadores"></div>
+      </div>
+      <div class="cm-card" id="card-heat-s">
+        <h3>Pulg-Ø por soldador y día · semana en curso</h3>
+        <p class="cm-note">Cada celda es lo que soldó ese día; la última columna, el total de la semana.</p>
+        <div class="cm-heat" id="hm-sold" data-source="mapa_semana"></div>
+      </div>
+      <div class="cm-card wide" id="card-tb-s">
+        <h3>Detalle por soldador · <span class="cm-per-name">semana en curso</span></h3>
+        <input class="cm-search" type="search" placeholder="Buscar soldador…" aria-label="Buscar soldador" id="q-sold">
+        <div class="cm-tablebox"><table class="cm-table" id="tb-sold" data-source="soldadores" data-row-key="periodo,clave">
+          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="pct_campo">% campo</th><th data-field="rt_rechazadas">RT rech.</th><th data-field="pct_rechazo">% rechazo RT</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TUBEROS -->
+  <section class="cm-sec cm-page" id="tuberos" hidden>
+    <div class="cm-tiles">
+      <div class="cm-tile"><div class="cm-tile-l">Tuberos con armado</div><div class="cm-tile-v cm-per dash-skeleton" data-source="kpi_periodo" data-field="tuberos_activos" data-where="periodo=semana" data-fmt="int">—</div><div class="cm-tile-s"><span class="cm-per-name">semana en curso</span></div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Pulg-Ø por tubero-día</div><div class="cm-tile-v cm-per dash-skeleton" data-source="kpi_periodo" data-field="pulg_tubero_dia" data-where="periodo=semana" data-fmt="dec">—</div><div class="cm-tile-s"><span class="cm-per" data-source="kpi_periodo" data-field="tubero_dias" data-where="periodo=semana" data-fmt="int">—</span> tubero-días trabajados</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas armadas (fit-up)</div><div class="cm-tile-v cm-per dash-skeleton" data-source="kpi_periodo" data-field="juntas_armadas" data-where="periodo=semana" data-fmt="int">—</div><div class="cm-tile-s"><span class="cm-per" data-source="kpi_periodo" data-field="pulg_armadas" data-where="periodo=semana" data-fmt="int">—</span> pulg-Ø</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Armadas sin soldar (total)</div><div class="cm-tile-v dash-skeleton" data-source="proyeccion" data-field="backlog_juntas" data-row="0" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="proyeccion" data-field="backlog_pulg" data-row="0" data-fmt="int">—</span> pulg-Ø esperando soldador</div></div>
+    </div>
+    <div class="cm-grid">
+      <div class="cm-card" id="card-rank-t">
+        <h3>Ranking de tuberos · <span class="cm-per-name">semana en curso</span></h3>
+        <p class="cm-note">Pulg-Ø armadas; a la derecha, pulg-Ø por día trabajado. En gris, plantilla sin armado.</p>
+        <div class="cm-legend" id="leg-frente-t"></div>
+        <div class="cm-rank" id="rk-tub" data-source="tuberos"></div>
+      </div>
+      <div class="cm-card" id="card-heat-t">
+        <h3>Pulg-Ø armadas por tubero y día · semana en curso</h3>
+        <p class="cm-note">Cada celda es lo que armó ese día; la última columna, el total de la semana.</p>
+        <div class="cm-heat" id="hm-tub" data-source="mapa_semana"></div>
+      </div>
+      <div class="cm-card wide" id="card-tb-t">
+        <h3>Detalle por tubero · <span class="cm-per-name">semana en curso</span></h3>
+        <input class="cm-search" type="search" placeholder="Buscar tubero…" aria-label="Buscar tubero" id="q-tub">
+        <div class="cm-tablebox"><table class="cm-table" id="tb-tub" data-source="tuberos" data-row-key="periodo,clave">
+          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="juntas_ya_soldadas">Ya soldadas</th><th data-field="pct_soldado">% soldado</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALIDAD -->
+  <section class="cm-sec cm-page" id="calidad" hidden>
+    <div class="cm-tiles">
+      <div class="cm-tile"><div class="cm-tile-l">Juntas radiografiadas (RT)</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="radiografias" data-row="0" data-fmt="int">—</div><div class="cm-tile-s">en <span data-source="rt_resumen" data-field="reportes" data-row="0" data-fmt="int">—</span> reportes</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Tasa de rechazo</div><div class="cm-tile-v dash-skeleton cm-rech" data-source="rt_resumen" data-field="pct_rechazo" data-row="0" data-fmt="pct">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="rechazadas" data-row="0" data-fmt="int">—</span> rechazadas de las que tienen resultado</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Con resultado capturado</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="pct_con_resultado" data-row="0" data-fmt="pct">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="sin_resultado" data-row="0" data-fmt="int">—</span> sin resultado en el consolidado</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Último reporte RT</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="ultimo_reporte" data-row="0" data-fmt="fecha">—</div><div class="cm-tile-s cm-rt-age">—</div></div>
+    </div>
+    <div class="cm-grid">
+      <div class="cm-card" id="card-rt-bar">
+        <h3>Resultado de radiografías por soldador</h3>
+        <p class="cm-note">Aceptadas y rechazadas; una junta con dos soldadores cuenta para ambos.</p>
+        <div class="cm-legend" id="leg-rt"></div>
+        <div class="cm-rank" id="rk-rt" data-source="rt_soldador"></div>
+      </div>
+      <div class="cm-card" id="card-rt-tb">
+        <h3>Detalle RT por soldador</h3>
+        <div class="cm-tablebox"><table class="cm-table" id="tb-rt" data-source="rt_soldador" data-row-key="clave">
+          <thead><tr><th class="t" data-field="clave">Clave</th><th data-field="radiografias">Radiografías</th><th data-field="aceptadas">Aceptadas</th><th data-field="rechazadas">Rechazadas</th><th data-field="sin_resultado">Sin resultado</th><th data-field="pct_rechazo">% rechazo</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="calcs.js"></script>
+<script src="app.js"></script>
