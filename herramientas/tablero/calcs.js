@@ -274,7 +274,7 @@ dash.calc('servicios', {
 dash.calc('proyeccion', {
   inputs: ['juntas', 'curva_s'],
   title: 'Proyección de cierre',
-  description: 'Avance contra el total del programa (Curva S), ritmo de las últimas 4 semanas, ritmo necesario para la meta, fecha estimada de cierre y soldadores necesarios (6 días hábiles por semana).',
+  description: 'Avance contra el total del programa (Curva S), ritmo de las últimas 4 semanas, ritmo necesario para la meta de término del 10 nov 2026, fecha estimada de cierre y soldadores necesarios (6 días hábiles por semana).',
   fn: (juntas, curva_s) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
@@ -284,7 +284,7 @@ dash.calc('proyeccion', {
     const max = f[f.length - 1];
     const lunes = add(max, -((D(max).getUTCDay() + 6) % 7));
     const cierre = curva_s.find((r) => r.semana === 'Cierre');
-    const total = Number(cierre.pulg_reprog_acum), meta = cierre.fecha;
+    const total = Number(cierre.pulg_reprog_acum), meta = '2026-11-10'; // meta de término fijada por el usuario
     const sum = (a) => a.reduce((t, r) => t + Number(r.diam), 0);
     const sold = sum(J.filter((r) => r.fecha_soldadura));
     const pend = total - sold;
@@ -375,5 +375,29 @@ dash.calc('rt_resumen', {
       ultimo_reporte: fechas[fechas.length - 1] || null,
       reportes: new Set(rt.map((r) => r.reporte)).size,
     }];
+  },
+});
+
+dash.calc('curva_reprog', {
+  inputs: ['juntas', 'curva_s'],
+  title: 'Curva reprogramada a la meta',
+  description: 'Curva S real hasta la fecha de corte y, desde ahí, el saldo pendiente repartido en línea recta semana a semana hasta la meta de término del 10 nov 2026.',
+  fn: (juntas, curva_s) => {
+    const D = (s) => new Date(s + 'T00:00:00Z');
+    const iso = (t) => t.toISOString().slice(0, 10);
+    const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
+    const meta = '2026-11-10';
+    const J = juntas.filter((r) => r.cancelada !== 'si');
+    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
+    const max = f[f.length - 1];
+    const total = Number(curva_s.find((r) => r.semana === 'Cierre').pulg_reprog_acum);
+    const sold = J.filter((r) => r.fecha_soldadura).reduce((t, r) => t + Number(r.diam), 0);
+    const out = curva_s.filter((r) => r.semana !== 'Cierre' && r.fecha < max && r.pulg_real_acum !== '')
+      .map((r) => ({ fecha: r.fecha, pulg_reprog_acum: Number(r.pulg_real_acum) }));
+    out.push({ fecha: max, pulg_reprog_acum: sold });
+    const dias = (D(meta) - D(max)) / 864e5;
+    for (let d = 7; d < dias; d += 7) out.push({ fecha: add(max, d), pulg_reprog_acum: sold + (total - sold) * d / dias });
+    if (dias > 0) out.push({ fecha: meta, pulg_reprog_acum: total });
+    return out;
   },
 });

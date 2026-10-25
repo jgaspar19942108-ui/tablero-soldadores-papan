@@ -164,9 +164,9 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
     <div class="cm-grid">
       <div class="cm-card wide" id="card-curva">
         <h3>Curva S: real, reprogramado y proyección al ritmo actual</h3>
-        <p class="cm-note">Pulgadas-Ø acumuladas. La proyección sigue el promedio de las últimas 4 semanas desde la fecha de corte.</p>
+        <p class="cm-note">Pulgadas-Ø acumuladas. El reprogramado reparte lo pendiente hasta la meta del 10 nov; la proyección sigue el promedio de las últimas 4 semanas.</p>
         <div class="cm-legend" id="leg-curva"></div>
-        <div class="cm-chart dash-skeleton" id="ch-curva" data-source="curva_s curva_proyeccion" style="min-height:300px"></div>
+        <div class="cm-chart dash-skeleton" id="ch-curva" data-source="curva_s curva_proyeccion curva_reprog" style="min-height:300px"></div>
       </div>
       <div class="cm-card" id="card-semanal">
         <h3>Pulgadas-Ø soldadas por semana</h3>
@@ -276,7 +276,7 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 </div>
 
 
-<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Consolidado RT-PT, Curva S) · Actualizado 24/10/2026 19:10 (hora de México)</p>
+<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Consolidado RT-PT, Curva S) · Actualizado 24/10/2026 19:25 (hora de México)</p>
 </div>
 <script>
 window.dash = (() => {
@@ -580,7 +580,7 @@ dash.calc('servicios', {
 dash.calc('proyeccion', {
   inputs: ['juntas', 'curva_s'],
   title: 'Proyección de cierre',
-  description: 'Avance contra el total del programa (Curva S), ritmo de las últimas 4 semanas, ritmo necesario para la meta, fecha estimada de cierre y soldadores necesarios (6 días hábiles por semana).',
+  description: 'Avance contra el total del programa (Curva S), ritmo de las últimas 4 semanas, ritmo necesario para la meta de término del 10 nov 2026, fecha estimada de cierre y soldadores necesarios (6 días hábiles por semana).',
   fn: (juntas, curva_s) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
@@ -590,7 +590,7 @@ dash.calc('proyeccion', {
     const max = f[f.length - 1];
     const lunes = add(max, -((D(max).getUTCDay() + 6) % 7));
     const cierre = curva_s.find((r) => r.semana === 'Cierre');
-    const total = Number(cierre.pulg_reprog_acum), meta = cierre.fecha;
+    const total = Number(cierre.pulg_reprog_acum), meta = '2026-11-10'; // meta de término fijada por el usuario
     const sum = (a) => a.reduce((t, r) => t + Number(r.diam), 0);
     const sold = sum(J.filter((r) => r.fecha_soldadura));
     const pend = total - sold;
@@ -681,6 +681,30 @@ dash.calc('rt_resumen', {
       ultimo_reporte: fechas[fechas.length - 1] || null,
       reportes: new Set(rt.map((r) => r.reporte)).size,
     }];
+  },
+});
+
+dash.calc('curva_reprog', {
+  inputs: ['juntas', 'curva_s'],
+  title: 'Curva reprogramada a la meta',
+  description: 'Curva S real hasta la fecha de corte y, desde ahí, el saldo pendiente repartido en línea recta semana a semana hasta la meta de término del 10 nov 2026.',
+  fn: (juntas, curva_s) => {
+    const D = (s) => new Date(s + 'T00:00:00Z');
+    const iso = (t) => t.toISOString().slice(0, 10);
+    const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
+    const meta = '2026-11-10';
+    const J = juntas.filter((r) => r.cancelada !== 'si');
+    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
+    const max = f[f.length - 1];
+    const total = Number(curva_s.find((r) => r.semana === 'Cierre').pulg_reprog_acum);
+    const sold = J.filter((r) => r.fecha_soldadura).reduce((t, r) => t + Number(r.diam), 0);
+    const out = curva_s.filter((r) => r.semana !== 'Cierre' && r.fecha < max && r.pulg_real_acum !== '')
+      .map((r) => ({ fecha: r.fecha, pulg_reprog_acum: Number(r.pulg_real_acum) }));
+    out.push({ fecha: max, pulg_reprog_acum: sold });
+    const dias = (D(meta) - D(max)) / 864e5;
+    for (let d = 7; d < dias; d += 7) out.push({ fecha: add(max, d), pulg_reprog_acum: sold + (total - sold) * d / dias });
+    if (dias > 0) out.push({ fecha: meta, pulg_reprog_acum: total });
+    return out;
   },
 });
 </script>
@@ -805,14 +829,14 @@ dash.calc('rt_resumen', {
   // ---------- Curva S ----------
   const drawCurva = () => {
     const el = document.getElementById('ch-curva');
-    if (!prep(el, ['curva_s', 'curva_proyeccion', 'proyeccion'])) return;
-    const cs = rowsOf('curva_s'), cp = rowsOf('curva_proyeccion'), pr = rowsOf('proyeccion')[0];
+    if (!prep(el, ['curva_s', 'curva_proyeccion', 'proyeccion', 'curva_reprog'])) return;
+    const cs = rowsOf('curva_s'), cp = rowsOf('curva_proyeccion'), pr = rowsOf('proyeccion')[0], cr = rowsOf('curva_reprog');
     const P = (s) => new Date(s + 'T00:00:00Z');
-    const plan = cs.map((r) => ({ x: P(r.fecha), y: +r.pulg_reprog_acum, f: r.fecha }));
+    const plan = cr.map((r) => ({ x: P(r.fecha), y: +r.pulg_reprog_acum, f: r.fecha }));
     const real = cs.filter((r) => r.pulg_real_acum !== '' && r.pulg_real_acum != null).map((r) => ({ x: P(r.fecha), y: +r.pulg_real_acum, f: r.fecha }));
     const proy = cp.map((r) => ({ x: P(r.fecha), y: +r.pulg_proyectadas, f: r.fecha }));
     const C = [color(0), 'var(--cds-chart-muted)', color(0)];
-    legend(document.getElementById('leg-curva'), [[C[0], 'Real'], [C[1], 'Reprogramado'], [C[2], 'Proyección al ritmo actual', true]]);
+    legend(document.getElementById('leg-curva'), [[C[0], 'Real'], [C[1], 'Reprogramado a la meta'], [C[2], 'Proyección al ritmo actual', true]]);
     el.replaceChildren();
     const W = el.clientWidth || 600, H = 300;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);

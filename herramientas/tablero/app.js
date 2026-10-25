@@ -119,14 +119,14 @@
   // ---------- Curva S ----------
   const drawCurva = () => {
     const el = document.getElementById('ch-curva');
-    if (!prep(el, ['curva_s', 'curva_proyeccion', 'proyeccion'])) return;
-    const cs = rowsOf('curva_s'), cp = rowsOf('curva_proyeccion'), pr = rowsOf('proyeccion')[0];
+    if (!prep(el, ['curva_s', 'curva_proyeccion', 'proyeccion', 'curva_reprog'])) return;
+    const cs = rowsOf('curva_s'), cp = rowsOf('curva_proyeccion'), pr = rowsOf('proyeccion')[0], cr = rowsOf('curva_reprog');
     const P = (s) => new Date(s + 'T00:00:00Z');
-    const plan = cs.map((r) => ({ x: P(r.fecha), y: +r.pulg_reprog_acum, f: r.fecha }));
+    const plan = cr.map((r) => ({ x: P(r.fecha), y: +r.pulg_reprog_acum, f: r.fecha }));
     const real = cs.filter((r) => r.pulg_real_acum !== '' && r.pulg_real_acum != null).map((r) => ({ x: P(r.fecha), y: +r.pulg_real_acum, f: r.fecha }));
     const proy = cp.map((r) => ({ x: P(r.fecha), y: +r.pulg_proyectadas, f: r.fecha }));
     const C = [color(0), 'var(--cds-chart-muted)', color(0)];
-    legend(document.getElementById('leg-curva'), [[C[0], 'Real'], [C[1], 'Reprogramado'], [C[2], 'Proyección al ritmo actual', true]]);
+    legend(document.getElementById('leg-curva'), [[C[0], 'Real'], [C[1], 'Reprogramado a la meta'], [C[2], 'Proyección al ritmo actual', true]]);
     el.replaceChildren();
     const W = el.clientWidth || 600, H = 300;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
