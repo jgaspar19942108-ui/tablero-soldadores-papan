@@ -428,19 +428,20 @@
     if (!tableState(t, ['inspeccion'])) { t.querySelector('tbody').replaceChildren(); return; }
     const rows = rowsOf('inspeccion');
     const bar = (v, c) => {
+      if (v == null) { const d = document.createElement('span'); d.textContent = '—'; return d; }
       const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:9rem';
       const tr = document.createElement('div'); tr.className = 'cm-rank-track'; tr.style.flex = '1'; tr.style.height = '10px';
       const f = document.createElement('div'); f.className = 'cm-rank-fill'; f.style.width = (100 * (v || 0)) + '%'; f.style.background = c; tr.append(f);
       const l = document.createElement('span'); l.textContent = fPct(v || 0); l.style.minWidth = '3.2rem'; l.style.textAlign = 'right';
       w.append(tr, l); return w;
     };
-    table('tb-insp', rows, [{ f: 'area', t: 1 }, { f: 'soldadas', fmt: FMT.int }, { f: 'rt_hechas', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pct_rt', t: 1, fmt: FMT.pct }, { f: 'pt_hechas', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }, { f: 'pct_pt', t: 1, fmt: FMT.pct }, { f: 'rt_por_reparar', fmt: FMT.int }], ['area']);
+    table('tb-insp', rows, [{ f: 'area', t: 1 }, { f: 'bw_soldadas', fmt: FMT.int }, { f: 'rt_hechas', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pct_rt', t: 1, fmt: FMT.pct }, { f: 'sw_soldadas', fmt: FMT.int }, { f: 'pt_hechas', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }, { f: 'pct_pt', t: 1, fmt: FMT.pct }, { f: 'rt_por_reparar', fmt: FMT.int }, { f: 'sin_tipo', fmt: FMT.int }], ['area']);
     t.querySelectorAll('tbody tr').forEach((tr) => {
       const r = rows.find((x) => encodeURIComponent(x.area) === tr.dataset.key);
       if (!r) return;
       const td = tr.children;
       td[4].replaceChildren(bar(r.pct_rt, color(0)));
-      td[7].replaceChildren(bar(r.pct_pt, color(1)));
+      td[8].replaceChildren(bar(r.pct_pt, color(1)));
       if (r.area === 'TOTAL') tr.style.fontWeight = '600';
     });
     const sl = rowsOf('rt_sin_ligar')[0];

@@ -224,20 +224,20 @@
 
   <!-- CALIDAD -->
   <section class="cm-sec cm-page" id="calidad" hidden>
-    <h2 id="pendiente-inspeccion">Pendiente de inspección · RT y PT al 100% de las juntas soldadas</h2>
+    <h2 id="pendiente-inspeccion">Pendiente de inspección · RT al 100% de las BW y PT al 100% de las SW soldadas</h2>
     <div class="cm-tiles">
-      <div class="cm-tile"><div class="cm-tile-l">Juntas soldadas por radiografiar (RT)</div><div class="cm-tile-v dash-skeleton cm-pend" data-source="inspeccion" data-field="rt_pend" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="inspeccion" data-field="pct_rt" data-where="area=TOTAL" data-fmt="pct">—</span> de <span data-source="inspeccion" data-field="soldadas" data-where="area=TOTAL" data-fmt="int">—</span> soldadas ya con RT</div></div>
-      <div class="cm-tile"><div class="cm-tile-l">Juntas soldadas por aplicar PT</div><div class="cm-tile-v dash-skeleton cm-pend" data-source="inspeccion" data-field="pt_pend" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="inspeccion" data-field="pct_pt" data-where="area=TOTAL" data-fmt="pct">—</span> de las soldadas ya con PT</div></div>
-      <div class="cm-tile"><div class="cm-tile-l">Juntas rechazadas en RT sin reparar</div><div class="cm-tile-v dash-skeleton" data-source="inspeccion" data-field="rt_por_reparar" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s">ligadas a la bitácora</div></div>
-      <div class="cm-tile"><div class="cm-tile-l">Inspeccionadas sin fecha de soldadura</div><div class="cm-tile-v dash-skeleton" data-source="inspeccion" data-field="insp_sin_fecha" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s">tienen RT o PT pero en la bitácora no figuran soldadas</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas BW por radiografiar (RT)</div><div class="cm-tile-v dash-skeleton cm-pend" data-source="inspeccion" data-field="rt_pend" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="inspeccion" data-field="pct_rt" data-where="area=TOTAL" data-fmt="pct">—</span> de <span data-source="inspeccion" data-field="bw_soldadas" data-where="area=TOTAL" data-fmt="int">—</span> BW soldadas ya con RT</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas SW por aplicar PT</div><div class="cm-tile-v dash-skeleton cm-pend" data-source="inspeccion" data-field="pt_pend" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="inspeccion" data-field="pct_pt" data-where="area=TOTAL" data-fmt="pct">—</span> de <span data-source="inspeccion" data-field="sw_soldadas" data-where="area=TOTAL" data-fmt="int">—</span> SW soldadas ya con PT</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas BW rechazadas en RT sin reparar</div><div class="cm-tile-v dash-skeleton" data-source="inspeccion" data-field="rt_por_reparar" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s">ligadas a la bitácora</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Soldadas sin tipo BW/SW</div><div class="cm-tile-v dash-skeleton" data-source="inspeccion" data-field="sin_tipo" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s">no se sabe si llevan RT o PT · <span data-source="inspeccion" data-field="insp_sin_fecha" data-where="area=TOTAL" data-fmt="int">—</span> inspeccionadas sin fecha de soldadura</div></div>
     </div>
     <div class="cm-grid">
       <div class="cm-card wide" id="card-insp-area">
         <h3>Pendiente de RT y PT por área</h3>
-        <p class="cm-note">Juntas soldadas sin inspección ligada. Ordenado por el total pendiente. <span class="cm-sinligar" data-source="rt_sin_ligar"></span></p>
+        <p class="cm-note">BW soldadas sin RT y SW soldadas sin PT ligado. Ordenado por el total pendiente. <span class="cm-sinligar" data-source="rt_sin_ligar"></span></p>
         <div class="cm-legend" id="leg-insp"></div>
         <div class="cm-tablebox" style="max-height:none"><table class="cm-table" id="tb-insp" data-source="inspeccion" data-row-key="area">
-          <thead><tr><th class="t" data-field="area">Área</th><th data-field="soldadas">Soldadas</th><th data-field="rt_hechas">Con RT</th><th data-field="rt_pend">Por RT</th><th class="t" data-field="pct_rt">Avance RT</th><th data-field="pt_hechas">Con PT</th><th data-field="pt_pend">Por PT</th><th class="t" data-field="pct_pt">Avance PT</th><th data-field="rt_por_reparar">RT por reparar</th></tr></thead><tbody></tbody></table></div>
+          <thead><tr><th class="t" data-field="area">Área</th><th data-field="bw_soldadas">BW soldadas</th><th data-field="rt_hechas">Con RT</th><th data-field="rt_pend">Por RT</th><th class="t" data-field="pct_rt">Avance RT</th><th data-field="sw_soldadas">SW soldadas</th><th data-field="pt_hechas">Con PT</th><th data-field="pt_pend">Por PT</th><th class="t" data-field="pct_pt">Avance PT</th><th data-field="rt_por_reparar">RT por reparar</th><th data-field="sin_tipo">Sin tipo</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
     <h2>Resultados de RT y PT</h2>
