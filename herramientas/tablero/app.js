@@ -429,21 +429,46 @@
     const rows = rowsOf('inspeccion');
     const bar = (v, c) => {
       if (v == null) { const d = document.createElement('span'); d.textContent = '—'; return d; }
-      const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:9rem';
+      const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:6.5rem';
       const tr = document.createElement('div'); tr.className = 'cm-rank-track'; tr.style.flex = '1'; tr.style.height = '10px';
       const f = document.createElement('div'); f.className = 'cm-rank-fill'; f.style.width = (100 * (v || 0)) + '%'; f.style.background = c; tr.append(f);
       const l = document.createElement('span'); l.textContent = fPct(v || 0); l.style.minWidth = '3.2rem'; l.style.textAlign = 'right';
       w.append(tr, l); return w;
     };
-    table('tb-insp', rows, [{ f: 'area', t: 1 }, { f: 'bw_soldadas', fmt: FMT.int }, { f: 'rt_hechas', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pct_rt', t: 1, fmt: FMT.pct }, { f: 'sw_soldadas', fmt: FMT.int }, { f: 'pt_hechas', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }, { f: 'pct_pt', t: 1, fmt: FMT.pct }, { f: 'rt_por_reparar', fmt: FMT.int }, { f: 'sin_tipo', fmt: FMT.int }], ['area']);
+    table('tb-insp', rows, [{ f: 'area', t: 1 }, { f: 'juntas_total', fmt: FMT.int }, { f: 'bw_total', fmt: FMT.int }, { f: 'bw_soldadas', fmt: FMT.int }, { f: 'rt_hechas', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pct_rt', t: 1, fmt: FMT.pct }, { f: 'sw_total', fmt: FMT.int }, { f: 'sw_soldadas', fmt: FMT.int }, { f: 'pt_hechas', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }, { f: 'pct_pt', t: 1, fmt: FMT.pct }, { f: 'rt_por_reparar', fmt: FMT.int }, { f: 'sin_tipo_total', fmt: FMT.int }], ['area']);
     t.querySelectorAll('tbody tr').forEach((tr) => {
       const r = rows.find((x) => encodeURIComponent(x.area) === tr.dataset.key);
       if (!r) return;
       const td = tr.children;
-      td[4].replaceChildren(bar(r.pct_rt, color(0)));
-      td[8].replaceChildren(bar(r.pct_pt, color(1)));
+      td[6].replaceChildren(bar(r.pct_rt, color(0)));
+      td[11].replaceChildren(bar(r.pct_pt, color(1)));
       if (r.area === 'TOTAL') tr.style.fontWeight = '600';
     });
+    // embudo: total -> soldadas -> inspeccionadas
+    const tot = rows.find((r) => r.area === 'TOTAL');
+    const emb = document.getElementById('emb-insp');
+    legend(document.getElementById('leg-embudo'), [[color(0), 'BW con RT'], [color(1), 'SW con PT'], ['var(--cds-chart-muted)', 'Soldadas sin inspección'], ['var(--color-border-line)', 'Por soldar']]);
+    emb.replaceChildren();
+    if (tot) {
+      const linea = (nombre, total, sold, insp, c, met) => {
+        const r = document.createElement('div'); r.className = 'cm-emb-row';
+        const n = document.createElement('div'); const b = document.createElement('b'); b.textContent = nombre; n.append(b, document.createElement('br'), document.createTextNode(fInt(total) + ' juntas'));
+        const bar = document.createElement('div'); bar.className = 'cm-emb-bar';
+        [[insp, c], [sold - insp, 'var(--cds-chart-muted)'], [total - sold, 'transparent']].forEach(([v, col]) => {
+          const d = document.createElement('div'); d.style.width = (total ? 100 * v / total : 0) + '%'; d.style.background = col;
+          if (col !== 'transparent' && total && v / total > 0.06) d.textContent = fInt(v);
+          bar.append(d);
+        });
+        const nums = document.createElement('div'); nums.className = 'cm-emb-nums';
+        nums.textContent = `Soldadas ${fInt(sold)} (${fPct(total ? sold / total : 0)} del total) · Con ${met} ${fInt(insp)} (${fPct(total ? insp / total : 0)} del total, ${fPct(sold ? insp / sold : 0)} de las soldadas) · Por soldar ${fInt(total - sold)}`;
+        r.append(n, bar, nums); emb.append(r);
+      };
+      linea('BW · RT', tot.bw_total, tot.bw_soldadas, tot.rt_hechas, color(0), 'RT');
+      linea('SW · PT', tot.sw_total, tot.sw_soldadas, tot.pt_hechas, color(1), 'PT');
+      const st = document.createElement('p'); st.className = 'cm-note';
+      st.textContent = `Total de juntas en la bitácora: ${fInt(tot.juntas_total)} (${fInt(tot.bw_total)} BW, ${fInt(tot.sw_total)} SW y ${fInt(tot.sin_tipo_total)} sin tipo capturado).`;
+      emb.append(st);
+    }
     const sl = rowsOf('rt_sin_ligar')[0];
     root.querySelector('.cm-sinligar').textContent = sl ? `No se encontraron en la bitácora ${fInt(sl.rt)} registros de RT y ${fInt(sl.pt)} de PT de estas áreas; revisa su isométrico o número de junta.` : '';
   };

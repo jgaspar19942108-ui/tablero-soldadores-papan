@@ -416,14 +416,15 @@ dash.calc('rt_semanal', {
 dash.calc('inspeccion', {
   inputs: ['juntas'],
   title: 'Pendiente de inspección por área',
-  description: 'Juntas soldadas (sin canceladas) por área: las BW requieren RT al 100% y las SW requieren PT al 100%; se comparan contra las que ya tienen RT o PT ligado en los resúmenes de validación.',
+  description: 'Por área (sin canceladas): juntas totales BW y SW, cuántas ya están soldadas y cuántas tienen inspección; las BW requieren RT al 100% y las SW PT al 100%, contadas sobre las juntas terminadas.',
   fn: (juntas) => {
     const J = juntas.filter((r) => r.cancelada !== 'si');
     const g = {};
-    const row = (a) => (g[a] ??= { area: a, bw_soldadas: 0, rt_hechas: 0, sw_soldadas: 0, pt_hechas: 0, rt_por_reparar: 0, sin_tipo: 0, insp_sin_fecha: 0 });
+    const row = (a) => (g[a] ??= { area: a, juntas_total: 0, bw_total: 0, sw_total: 0, sin_tipo_total: 0, bw_soldadas: 0, rt_hechas: 0, sw_soldadas: 0, pt_hechas: 0, rt_por_reparar: 0, sin_tipo: 0, insp_sin_fecha: 0 });
     J.forEach((r) => {
       const a = r.area || '(sin área)';
       const sitios = [row(a), row('TOTAL')];
+      sitios.forEach((o) => { o.juntas_total++; if (r.tipo === 'BW') o.bw_total++; else if (r.tipo === 'SW') o.sw_total++; else o.sin_tipo_total++; });
       if (!r.fecha_soldadura) { if (r.rt || r.pt) sitios.forEach((o) => o.insp_sin_fecha++); return; }
       sitios.forEach((o) => {
         if (r.tipo === 'BW') { o.bw_soldadas++; if (r.rt) o.rt_hechas++; if (r.rt === 'Rechazada') o.rt_por_reparar++; }
@@ -431,9 +432,11 @@ dash.calc('inspeccion', {
         else o.sin_tipo++;
       });
     });
-    return Object.values(g).filter((o) => o.bw_soldadas + o.sw_soldadas + o.sin_tipo > 0).map((o) => ({
+    return Object.values(g).map((o) => ({
       ...o, rt_pend: o.bw_soldadas - o.rt_hechas, pt_pend: o.sw_soldadas - o.pt_hechas,
       pct_rt: o.bw_soldadas ? o.rt_hechas / o.bw_soldadas : null, pct_pt: o.sw_soldadas ? o.pt_hechas / o.sw_soldadas : null,
+      pct_bw_soldadas: o.bw_total ? o.bw_soldadas / o.bw_total : null, pct_sw_soldadas: o.sw_total ? o.sw_soldadas / o.sw_total : null,
+      pct_rt_total: o.bw_total ? o.rt_hechas / o.bw_total : null, pct_pt_total: o.sw_total ? o.pt_hechas / o.sw_total : null,
     })).sort((a, b) => (a.area === 'TOTAL') - (b.area === 'TOTAL') || (b.rt_pend + b.pt_pend) - (a.rt_pend + a.pt_pend));
   },
 });

@@ -83,6 +83,12 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 .cm-heat td.z { color: var(--color-fg-muted); }
 .cm-heat td.tot { font-weight: 600; background: transparent; }
 .cm-page[hidden] { display: none !important; }
+.cm-embudo { display: flex; flex-direction: column; gap: var(--cds-gap-md); min-height: 120px; }
+.cm-emb-row { display: grid; grid-template-columns: minmax(7rem, 11rem) 1fr; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: center; font-size: var(--cds-font-size-caption); }
+.cm-emb-row b { font-size: var(--cds-font-size-body); font-weight: 600; }
+.cm-emb-bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; background: color-mix(in srgb, var(--color-border-line) 45%, transparent); }
+.cm-emb-bar div { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.cm-emb-nums { grid-column: 2; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
 .cm-sec { display: flex; flex-direction: column; gap: var(--cds-gap-md); }
 .cm-sec h2 { margin: var(--cds-gap-sm) 0 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
 .cm-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
@@ -261,12 +267,20 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
       <div class="cm-tile"><div class="cm-tile-l">Soldadas sin tipo BW/SW</div><div class="cm-tile-v dash-skeleton" data-source="inspeccion" data-field="sin_tipo" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s">no se sabe si llevan RT o PT · <span data-source="inspeccion" data-field="insp_sin_fecha" data-where="area=TOTAL" data-fmt="int">—</span> inspeccionadas sin fecha de soldadura</div></div>
     </div>
     <div class="cm-grid">
+      <div class="cm-card wide" id="card-insp-embudo">
+        <h3>Total de juntas contra terminadas e inspeccionadas</h3>
+        <p class="cm-note">Cada barra es el total de juntas del tipo en la bitácora (sin canceladas): la parte oscura ya tiene inspección, la media está soldada sin inspección y la clara falta por soldar.</p>
+        <div class="cm-legend" id="leg-embudo"></div>
+        <div class="cm-embudo" id="emb-insp" data-source="inspeccion"></div>
+      </div>
+    </div>
+    <div class="cm-grid">
       <div class="cm-card wide" id="card-insp-area">
         <h3>Pendiente de RT y PT por área</h3>
-        <p class="cm-note">BW soldadas sin RT y SW soldadas sin PT ligado. Ordenado por el total pendiente. <span class="cm-sinligar" data-source="rt_sin_ligar"></span></p>
+        <p class="cm-note">Juntas totales contra soldadas e inspeccionadas. "Por RT" y "Por PT" son juntas ya soldadas sin inspección; el avance es sobre las soldadas. Ordenado por el total pendiente. <span class="cm-sinligar" data-source="rt_sin_ligar"></span></p>
         <div class="cm-legend" id="leg-insp"></div>
         <div class="cm-tablebox" style="max-height:none"><table class="cm-table" id="tb-insp" data-source="inspeccion" data-row-key="area">
-          <thead><tr><th class="t" data-field="area">Área</th><th data-field="bw_soldadas">BW soldadas</th><th data-field="rt_hechas">Con RT</th><th data-field="rt_pend">Por RT</th><th class="t" data-field="pct_rt">Avance RT</th><th data-field="sw_soldadas">SW soldadas</th><th data-field="pt_hechas">Con PT</th><th data-field="pt_pend">Por PT</th><th class="t" data-field="pct_pt">Avance PT</th><th data-field="rt_por_reparar">RT por reparar</th><th data-field="sin_tipo">Sin tipo</th></tr></thead><tbody></tbody></table></div>
+          <thead><tr><th class="t" data-field="area">Área</th><th data-field="juntas_total">Juntas total</th><th data-field="bw_total">BW total</th><th data-field="bw_soldadas">BW soldadas</th><th data-field="rt_hechas">Con RT</th><th data-field="rt_pend">Por RT</th><th class="t" data-field="pct_rt">Avance RT</th><th data-field="sw_total">SW total</th><th data-field="sw_soldadas">SW soldadas</th><th data-field="pt_hechas">Con PT</th><th data-field="pt_pend">Por PT</th><th class="t" data-field="pct_pt">Avance PT</th><th data-field="rt_por_reparar">RT por reparar</th><th data-field="sin_tipo_total">Sin tipo</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
     <h2>Resultados de RT y PT</h2>
@@ -301,7 +315,7 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 </div>
 
 
-<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 25/10/2026 11:48 (hora de México)</p>
+<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 25/10/2026 11:52 (hora de México)</p>
 </div>
 <script>
 window.dash = (() => {
@@ -747,14 +761,15 @@ dash.calc('rt_semanal', {
 dash.calc('inspeccion', {
   inputs: ['juntas'],
   title: 'Pendiente de inspección por área',
-  description: 'Juntas soldadas (sin canceladas) por área: las BW requieren RT al 100% y las SW requieren PT al 100%; se comparan contra las que ya tienen RT o PT ligado en los resúmenes de validación.',
+  description: 'Por área (sin canceladas): juntas totales BW y SW, cuántas ya están soldadas y cuántas tienen inspección; las BW requieren RT al 100% y las SW PT al 100%, contadas sobre las juntas terminadas.',
   fn: (juntas) => {
     const J = juntas.filter((r) => r.cancelada !== 'si');
     const g = {};
-    const row = (a) => (g[a] ??= { area: a, bw_soldadas: 0, rt_hechas: 0, sw_soldadas: 0, pt_hechas: 0, rt_por_reparar: 0, sin_tipo: 0, insp_sin_fecha: 0 });
+    const row = (a) => (g[a] ??= { area: a, juntas_total: 0, bw_total: 0, sw_total: 0, sin_tipo_total: 0, bw_soldadas: 0, rt_hechas: 0, sw_soldadas: 0, pt_hechas: 0, rt_por_reparar: 0, sin_tipo: 0, insp_sin_fecha: 0 });
     J.forEach((r) => {
       const a = r.area || '(sin área)';
       const sitios = [row(a), row('TOTAL')];
+      sitios.forEach((o) => { o.juntas_total++; if (r.tipo === 'BW') o.bw_total++; else if (r.tipo === 'SW') o.sw_total++; else o.sin_tipo_total++; });
       if (!r.fecha_soldadura) { if (r.rt || r.pt) sitios.forEach((o) => o.insp_sin_fecha++); return; }
       sitios.forEach((o) => {
         if (r.tipo === 'BW') { o.bw_soldadas++; if (r.rt) o.rt_hechas++; if (r.rt === 'Rechazada') o.rt_por_reparar++; }
@@ -762,9 +777,11 @@ dash.calc('inspeccion', {
         else o.sin_tipo++;
       });
     });
-    return Object.values(g).filter((o) => o.bw_soldadas + o.sw_soldadas + o.sin_tipo > 0).map((o) => ({
+    return Object.values(g).map((o) => ({
       ...o, rt_pend: o.bw_soldadas - o.rt_hechas, pt_pend: o.sw_soldadas - o.pt_hechas,
       pct_rt: o.bw_soldadas ? o.rt_hechas / o.bw_soldadas : null, pct_pt: o.sw_soldadas ? o.pt_hechas / o.sw_soldadas : null,
+      pct_bw_soldadas: o.bw_total ? o.bw_soldadas / o.bw_total : null, pct_sw_soldadas: o.sw_total ? o.sw_soldadas / o.sw_total : null,
+      pct_rt_total: o.bw_total ? o.rt_hechas / o.bw_total : null, pct_pt_total: o.sw_total ? o.pt_hechas / o.sw_total : null,
     })).sort((a, b) => (a.area === 'TOTAL') - (b.area === 'TOTAL') || (b.rt_pend + b.pt_pend) - (a.rt_pend + a.pt_pend));
   },
 });
@@ -1211,21 +1228,46 @@ dash.calc('rt_sin_ligar', {
     const rows = rowsOf('inspeccion');
     const bar = (v, c) => {
       if (v == null) { const d = document.createElement('span'); d.textContent = '—'; return d; }
-      const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:9rem';
+      const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:6.5rem';
       const tr = document.createElement('div'); tr.className = 'cm-rank-track'; tr.style.flex = '1'; tr.style.height = '10px';
       const f = document.createElement('div'); f.className = 'cm-rank-fill'; f.style.width = (100 * (v || 0)) + '%'; f.style.background = c; tr.append(f);
       const l = document.createElement('span'); l.textContent = fPct(v || 0); l.style.minWidth = '3.2rem'; l.style.textAlign = 'right';
       w.append(tr, l); return w;
     };
-    table('tb-insp', rows, [{ f: 'area', t: 1 }, { f: 'bw_soldadas', fmt: FMT.int }, { f: 'rt_hechas', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pct_rt', t: 1, fmt: FMT.pct }, { f: 'sw_soldadas', fmt: FMT.int }, { f: 'pt_hechas', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }, { f: 'pct_pt', t: 1, fmt: FMT.pct }, { f: 'rt_por_reparar', fmt: FMT.int }, { f: 'sin_tipo', fmt: FMT.int }], ['area']);
+    table('tb-insp', rows, [{ f: 'area', t: 1 }, { f: 'juntas_total', fmt: FMT.int }, { f: 'bw_total', fmt: FMT.int }, { f: 'bw_soldadas', fmt: FMT.int }, { f: 'rt_hechas', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pct_rt', t: 1, fmt: FMT.pct }, { f: 'sw_total', fmt: FMT.int }, { f: 'sw_soldadas', fmt: FMT.int }, { f: 'pt_hechas', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }, { f: 'pct_pt', t: 1, fmt: FMT.pct }, { f: 'rt_por_reparar', fmt: FMT.int }, { f: 'sin_tipo_total', fmt: FMT.int }], ['area']);
     t.querySelectorAll('tbody tr').forEach((tr) => {
       const r = rows.find((x) => encodeURIComponent(x.area) === tr.dataset.key);
       if (!r) return;
       const td = tr.children;
-      td[4].replaceChildren(bar(r.pct_rt, color(0)));
-      td[8].replaceChildren(bar(r.pct_pt, color(1)));
+      td[6].replaceChildren(bar(r.pct_rt, color(0)));
+      td[11].replaceChildren(bar(r.pct_pt, color(1)));
       if (r.area === 'TOTAL') tr.style.fontWeight = '600';
     });
+    // embudo: total -> soldadas -> inspeccionadas
+    const tot = rows.find((r) => r.area === 'TOTAL');
+    const emb = document.getElementById('emb-insp');
+    legend(document.getElementById('leg-embudo'), [[color(0), 'BW con RT'], [color(1), 'SW con PT'], ['var(--cds-chart-muted)', 'Soldadas sin inspección'], ['var(--color-border-line)', 'Por soldar']]);
+    emb.replaceChildren();
+    if (tot) {
+      const linea = (nombre, total, sold, insp, c, met) => {
+        const r = document.createElement('div'); r.className = 'cm-emb-row';
+        const n = document.createElement('div'); const b = document.createElement('b'); b.textContent = nombre; n.append(b, document.createElement('br'), document.createTextNode(fInt(total) + ' juntas'));
+        const bar = document.createElement('div'); bar.className = 'cm-emb-bar';
+        [[insp, c], [sold - insp, 'var(--cds-chart-muted)'], [total - sold, 'transparent']].forEach(([v, col]) => {
+          const d = document.createElement('div'); d.style.width = (total ? 100 * v / total : 0) + '%'; d.style.background = col;
+          if (col !== 'transparent' && total && v / total > 0.06) d.textContent = fInt(v);
+          bar.append(d);
+        });
+        const nums = document.createElement('div'); nums.className = 'cm-emb-nums';
+        nums.textContent = `Soldadas ${fInt(sold)} (${fPct(total ? sold / total : 0)} del total) · Con ${met} ${fInt(insp)} (${fPct(total ? insp / total : 0)} del total, ${fPct(sold ? insp / sold : 0)} de las soldadas) · Por soldar ${fInt(total - sold)}`;
+        r.append(n, bar, nums); emb.append(r);
+      };
+      linea('BW · RT', tot.bw_total, tot.bw_soldadas, tot.rt_hechas, color(0), 'RT');
+      linea('SW · PT', tot.sw_total, tot.sw_soldadas, tot.pt_hechas, color(1), 'PT');
+      const st = document.createElement('p'); st.className = 'cm-note';
+      st.textContent = `Total de juntas en la bitácora: ${fInt(tot.juntas_total)} (${fInt(tot.bw_total)} BW, ${fInt(tot.sw_total)} SW y ${fInt(tot.sin_tipo_total)} sin tipo capturado).`;
+      emb.append(st);
+    }
     const sl = rowsOf('rt_sin_ligar')[0];
     root.querySelector('.cm-sinligar').textContent = sl ? `No se encontraron en la bitácora ${fInt(sl.rt)} registros de RT y ${fInt(sl.pt)} de PT de estas áreas; revisa su isométrico o número de junta.` : '';
   };
