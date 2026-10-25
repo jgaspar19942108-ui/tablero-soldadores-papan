@@ -113,7 +113,8 @@
       age.textContent = `${fInt(dd)} días sin reporte al corte`;
       age.className = 'cm-tile-s cm-rt-age ' + (dd > 14 ? 'cm-down' : '');
     } else age.textContent = '';
-    const rr = root.querySelector('.cm-rech'); if (rs) rr.classList.toggle('cm-warn', rs.pct_rechazo > 0.05);
+    const rr = root.querySelector('.cm-rech'); if (rs) rr.classList.toggle('cm-warn', rs.pct_rechazo_rt > 0.05);
+    const rp = root.querySelector('.cm-reppend'); if (rs) rp.classList.toggle('cm-down', rs.reparacion_pend > 0);
   };
 
   // ---------- Curva S ----------
@@ -386,20 +387,39 @@
   // ---------- quality ----------
   const drawRT = () => {
     const el = document.getElementById('rk-rt');
-    legend(document.getElementById('leg-rt'), [[color(0), 'Aceptadas'], ['var(--cds-chart-status-critical)', 'Rechazadas'], ['var(--cds-chart-muted)', 'Sin resultado']]);
+    const CRIT = 'var(--cds-chart-status-critical)';
+    legend(document.getElementById('leg-rt'), [[color(0), 'Aceptadas'], [color(4), 'Rechazadas ya reparadas'], [CRIT, 'Rechazadas por reparar']]);
     if (prep(el, ['rt_soldador'])) {
-      const rows = rowsOf('rt_soldador');
-      const m = d3.max(rows, (r) => r.radiografias) || 1;
+      const rows = rowsOf('rt_soldador').filter((r) => r.rt_insp > 0);
+      const m = d3.max(rows, (r) => r.rt_insp) || 1;
       rank(el, rows, {
-        label: (r) => r.clave, value: (r) => r.radiografias, max: m,
-        stack: (r) => [[r.aceptadas, color(0)], [r.rechazadas, 'var(--cds-chart-status-critical)'], [r.sin_resultado, 'var(--cds-chart-muted)']],
-        valTxt: (r) => fInt(r.radiografias), valSub: (r) => (r.pct_rechazo != null ? fPct(r.pct_rechazo) + ' rech.' : 'sin resultado'),
+        label: (r) => r.clave, value: (r) => r.rt_insp, max: m,
+        stack: (r) => [[r.rt_aceptadas, color(0)], [r.reparadas_ok, color(4)], [r.reparacion_pend, CRIT]],
+        valTxt: (r) => fInt(r.rt_insp), valSub: (r) => fPct(r.pct_rechazo_rt) + ' rech.',
       });
     }
     const t = document.getElementById('tb-rt');
     if (tableState(t, ['rt_soldador'])) {
-      table('tb-rt', rowsOf('rt_soldador'), [{ f: 'clave', t: 1 }, { f: 'radiografias', fmt: FMT.int }, { f: 'aceptadas', fmt: FMT.int }, { f: 'rechazadas', fmt: FMT.int }, { f: 'sin_resultado', fmt: FMT.int }, { f: 'pct_rechazo', fmt: FMT.pct }], ['clave']);
+      table('tb-rt', rowsOf('rt_soldador'), [{ f: 'clave', t: 1 }, { f: 'rt_insp', fmt: FMT.int }, { f: 'rt_rechazadas', fmt: FMT.int }, { f: 'pct_rechazo_rt', fmt: FMT.pct }, { f: 'reparadas_ok', fmt: FMT.int }, { f: 'reparacion_pend', fmt: FMT.int }, { f: 'pt_insp', fmt: FMT.int }, { f: 'pct_rechazo_pt', fmt: FMT.pct }, { f: 'claves_corregidas', fmt: FMT.int }], ['clave']);
     } else t.querySelector('tbody').replaceChildren();
+    // semanal: barras de juntas con RT y línea de % de rechazo
+    const ch = document.getElementById('ch-rt-sem');
+    legend(document.getElementById('leg-rt-sem'), [[color(0), 'Juntas con RT'], [CRIT, 'Rechazadas'], [CRIT, '% de rechazo', true]]);
+    if (!prep(ch, ['rt_semanal'])) return;
+    const rows = rowsOf('rt_semanal');
+    barChart(ch, rows, { xKey: 'semana', xFmt: (s, long) => (long ? 'Semana del ' + fFechaY(s) : fFecha(s)),
+      series: [{ key: 'rt_insp', name: 'Juntas con RT', color: color(0) }, { key: 'rt_rechazadas', name: 'Rechazadas', color: CRIT }] });
+    const svg = d3.select(ch).select('svg');
+    const W = +svg.attr('viewBox').split(' ')[2], H = +svg.attr('viewBox').split(' ')[3];
+    const xs = rows.map((r) => r.semana);
+    const bands = svg.selectAll('rect[rx]').nodes();
+    const nS = 2, cx = (i) => { const a = bands[i * nS], b = bands[i * nS + 1]; return (+a.getAttribute('x') + +b.getAttribute('x') + +b.getAttribute('width')) / 2; };
+    const yMax = Math.max(0.3, d3.max(rows, (r) => r.pct_rechazo) * 1.15);
+    const y2 = d3.scaleLinear([0, yMax], [H - 24, 10]);
+    const pts = rows.map((r, i) => [cx(i), y2(r.pct_rechazo)]);
+    svg.append('path').attr('d', d3.line()(pts)).attr('fill', 'none').attr('stroke', CRIT).attr('stroke-width', 2).attr('stroke-dasharray', '5 3').attr('stroke-linejoin', 'round');
+    svg.selectAll('circle.pr').data(rows).join('circle').attr('class', 'pr').attr('r', 3).attr('cx', (d, i) => pts[i][0]).attr('cy', (d, i) => pts[i][1]).attr('fill', CRIT);
+    svg.selectAll('text.pr').data(rows).join('text').attr('class', 'pr lbl').attr('x', (d, i) => pts[i][0]).attr('y', (d, i) => pts[i][1] - 7).attr('text-anchor', 'middle').text((d) => d3.format('.0%')(d.pct_rechazo));
   };
 
   // ---------- draw ----------

@@ -44,7 +44,7 @@ dash.calc('kpi_periodo', {
 dash.calc('soldadores', {
   inputs: ['juntas', 'personal', 'rt'],
   title: 'Producción por soldador',
-  description: 'Juntas y pulgadas-Ø soldadas por clave de soldador en cada periodo, días trabajados, pulgadas por día y resultado de radiografías (RT acumulado).',
+  description: 'Juntas y pulgadas-Ø soldadas por clave de soldador en cada periodo, días trabajados, pulgadas por día y resultado de radiografías RT acumulado (primera toma, con la clave C/S REAL cuando no coincide).',
   fn: (juntas, personal, rt) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
@@ -61,8 +61,9 @@ dash.calc('soldadores', {
       if (!r.soldadores) return;
       r.soldadores.split(/\s*,\s*/).forEach((c) => {
         const o = (rtBy[c] ??= { ac: 0, re: 0 });
-        if (r.resultado === 'Aceptado') o.ac++;
-        if (r.resultado === 'Rechazado') o.re++;
+        if (r.metodo !== 'RT') return;
+        if (r.resultado === 'Aceptada') o.ac++;
+        if (r.resultado === 'Rechazada') o.re++;
       });
     });
     const out = [];
@@ -341,63 +342,73 @@ dash.calc('curva_proyeccion', {
 
 dash.calc('rt_soldador', {
   inputs: ['rt'],
-  title: 'Radiografías por soldador',
-  description: 'Juntas radiografiadas por soldador con resultado aceptado o rechazado y su tasa de rechazo; una junta con dos soldadores cuenta para ambos.',
+  title: 'Calidad RT y PT por soldador',
+  description: 'Por soldador: juntas con RT en primera toma aceptadas o rechazadas, rechazos ya reparados o pendientes, juntas con PT y claves corregidas por la columna C/S REAL; una junta con dos soldadores cuenta para ambos.',
   fn: (rt) => {
     const g = {};
+    const get = (c) => (g[c] ??= { clave: c, rt_insp: 0, rt_aceptadas: 0, rt_rechazadas: 0, reparadas_ok: 0, reparacion_pend: 0, pt_insp: 0, pt_rechazadas: 0, claves_corregidas: 0 });
     rt.forEach((r) => {
       if (!r.soldadores) return;
       r.soldadores.split(/\s*,\s*/).forEach((c) => {
-        const o = (g[c] ??= { clave: c, radiografias: 0, aceptadas: 0, rechazadas: 0, sin_resultado: 0 });
-        o.radiografias++;
-        if (r.resultado === 'Aceptado') o.aceptadas++;
-        else if (r.resultado === 'Rechazado') o.rechazadas++;
-        else o.sin_resultado++;
+        const o = get(c);
+        if (r.clave_corregida === 'si') o.claves_corregidas++;
+        if (r.metodo === 'RT' && (r.resultado === 'Aceptada' || r.resultado === 'Rechazada')) {
+          o.rt_insp++;
+          if (r.resultado === 'Aceptada') o.rt_aceptadas++;
+          else {
+            o.rt_rechazadas++;
+            if (r.reparacion1 === 'Aceptada' || r.reparacion2 === 'Aceptada') o.reparadas_ok++; else o.reparacion_pend++;
+          }
+        }
+        if (r.metodo === 'PT' && (r.resultado === 'Aceptada' || r.resultado === 'Rechazada')) {
+          o.pt_insp++;
+          if (r.resultado === 'Rechazada') o.pt_rechazadas++;
+        }
       });
     });
-    return Object.values(g).map((o) => ({ ...o, pct_rechazo: o.aceptadas + o.rechazadas ? o.rechazadas / (o.aceptadas + o.rechazadas) : null }))
-      .sort((a, b) => b.radiografias - a.radiografias);
+    return Object.values(g).map((o) => ({ ...o, pct_rechazo_rt: o.rt_insp ? o.rt_rechazadas / o.rt_insp : null, pct_rechazo_pt: o.pt_insp ? o.pt_rechazadas / o.pt_insp : null }))
+      .sort((a, b) => b.rt_insp - a.rt_insp || b.pt_insp - a.pt_insp);
   },
 });
 
 dash.calc('rt_resumen', {
   inputs: ['rt'],
-  title: 'Resumen de radiografías',
-  description: 'Total de juntas radiografiadas, resultados capturados, tasa de rechazo y fecha del último reporte.',
+  title: 'Resumen de calidad RT y PT',
+  description: 'Juntas con RT y PT, rechazo en primera toma, rechazos reparados y pendientes, claves corregidas por C/S REAL, juntas sin clave y fecha del último reporte.',
   fn: (rt) => {
-    const n = (s) => rt.filter((r) => r.resultado === s).length;
-    const ac = n('Aceptado'), re = n('Rechazado');
-    const fechas = rt.map((r) => r.fecha).filter(Boolean).sort();
+    const R = rt.filter((r) => r.metodo === 'RT'), P = rt.filter((r) => r.metodo === 'PT');
+    const ok = (r) => r.resultado === 'Aceptada' || r.resultado === 'Rechazada';
+    const Ri = R.filter(ok), Pi = P.filter(ok);
+    const Rr = Ri.filter((r) => r.resultado === 'Rechazada');
+    const rep = Rr.filter((r) => r.reparacion1 === 'Aceptada' || r.reparacion2 === 'Aceptada').length;
+    const fr = R.map((r) => r.fecha).filter(Boolean).sort(), fp = P.map((r) => r.fecha).filter(Boolean).sort();
     return [{
-      radiografias: rt.length, aceptadas: ac, rechazadas: re, por_revisar: n('Revisar'),
-      sin_resultado: n('Sin resultado capturado'), pct_rechazo: ac + re ? re / (ac + re) : null,
-      pct_con_resultado: rt.length ? (ac + re) / rt.length : null,
-      ultimo_reporte: fechas[fechas.length - 1] || null,
-      reportes: new Set(rt.map((r) => r.reporte)).size,
+      rt_registros: R.length, rt_insp: Ri.length, rt_aceptadas: Ri.length - Rr.length, rt_rechazadas: Rr.length,
+      pct_rechazo_rt: Ri.length ? Rr.length / Ri.length : null,
+      reparadas_ok: rep, reparacion_pend: Rr.length - rep,
+      pt_insp: Pi.length, pt_rechazadas: Pi.filter((r) => r.resultado === 'Rechazada').length,
+      pct_rechazo_pt: Pi.length ? Pi.filter((r) => r.resultado === 'Rechazada').length / Pi.length : null,
+      claves_corregidas: rt.filter((r) => r.clave_corregida === 'si').length,
+      sin_clave: rt.filter((r) => !r.soldadores).length,
+      sin_resultado: rt.filter((r) => !ok(r)).length,
+      ultimo_reporte: fr[fr.length - 1] || null, ultimo_pt: fp[fp.length - 1] || null,
     }];
   },
 });
 
-dash.calc('curva_reprog', {
-  inputs: ['juntas', 'curva_s'],
-  title: 'Curva reprogramada a la meta',
-  description: 'Curva S real hasta la fecha de corte y, desde ahí, el saldo pendiente repartido en línea recta semana a semana hasta la meta de término del 10 nov 2026.',
-  fn: (juntas, curva_s) => {
+dash.calc('rt_semanal', {
+  inputs: ['rt'],
+  title: 'Rechazo RT por semana',
+  description: 'Juntas con RT en primera toma por semana del reporte (lunes a domingo), rechazadas y porcentaje de rechazo.',
+  fn: (rt) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
-    const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
-    const meta = '2026-11-10';
-    const J = juntas.filter((r) => r.cancelada !== 'si');
-    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
-    const max = f[f.length - 1];
-    const total = Number(curva_s.find((r) => r.semana === 'Cierre').pulg_reprog_acum);
-    const sold = J.filter((r) => r.fecha_soldadura).reduce((t, r) => t + Number(r.diam), 0);
-    const out = curva_s.filter((r) => r.semana !== 'Cierre' && r.fecha < max && r.pulg_real_acum !== '')
-      .map((r) => ({ fecha: r.fecha, pulg_reprog_acum: Number(r.pulg_real_acum) }));
-    out.push({ fecha: max, pulg_reprog_acum: sold });
-    const dias = (D(meta) - D(max)) / 864e5;
-    for (let d = 7; d < dias; d += 7) out.push({ fecha: add(max, d), pulg_reprog_acum: sold + (total - sold) * d / dias });
-    if (dias > 0) out.push({ fecha: meta, pulg_reprog_acum: total });
-    return out;
+    const mon = (s) => iso(new Date(D(s).getTime() - ((D(s).getUTCDay() + 6) % 7) * 864e5));
+    const g = {};
+    rt.filter((r) => r.metodo === 'RT' && r.fecha && (r.resultado === 'Aceptada' || r.resultado === 'Rechazada')).forEach((r) => {
+      const o = (g[mon(r.fecha)] ??= { semana: mon(r.fecha), rt_insp: 0, rt_rechazadas: 0 });
+      o.rt_insp++; if (r.resultado === 'Rechazada') o.rt_rechazadas++;
+    });
+    return Object.values(g).sort((a, b) => (a.semana < b.semana ? -1 : 1)).map((o) => ({ ...o, pct_rechazo: o.rt_insp ? o.rt_rechazadas / o.rt_insp : null }));
   },
 });

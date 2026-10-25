@@ -225,22 +225,30 @@
   <!-- CALIDAD -->
   <section class="cm-sec cm-page" id="calidad" hidden>
     <div class="cm-tiles">
-      <div class="cm-tile"><div class="cm-tile-l">Juntas radiografiadas (RT)</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="radiografias" data-row="0" data-fmt="int">—</div><div class="cm-tile-s">en <span data-source="rt_resumen" data-field="reportes" data-row="0" data-fmt="int">—</span> reportes</div></div>
-      <div class="cm-tile"><div class="cm-tile-l">Tasa de rechazo</div><div class="cm-tile-v dash-skeleton cm-rech" data-source="rt_resumen" data-field="pct_rechazo" data-row="0" data-fmt="pct">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="rechazadas" data-row="0" data-fmt="int">—</span> rechazadas de las que tienen resultado</div></div>
-      <div class="cm-tile"><div class="cm-tile-l">Con resultado capturado</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="pct_con_resultado" data-row="0" data-fmt="pct">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="sin_resultado" data-row="0" data-fmt="int">—</span> sin resultado en el consolidado</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas con RT (primera toma)</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="rt_insp" data-row="0" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="rt_aceptadas" data-row="0" data-fmt="int">—</span> dentro de norma</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Rechazo RT</div><div class="cm-tile-v dash-skeleton cm-rech" data-source="rt_resumen" data-field="pct_rechazo_rt" data-row="0" data-fmt="pct">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="rt_rechazadas" data-row="0" data-fmt="int">—</span> juntas fuera de norma</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Rechazos por reparar</div><div class="cm-tile-v dash-skeleton cm-reppend" data-source="rt_resumen" data-field="reparacion_pend" data-row="0" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="reparadas_ok" data-row="0" data-fmt="int">—</span> ya reparadas y aceptadas</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas con PT</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="pt_insp" data-row="0" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="pct_rechazo_pt" data-row="0" data-fmt="pct">—</span> rechazo · <span data-source="rt_resumen" data-field="pt_rechazadas" data-row="0" data-fmt="int">—</span> fuera de norma</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Claves corregidas (C/S REAL)</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="claves_corregidas" data-row="0" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="sin_clave" data-row="0" data-fmt="int">—</span> registros sin clave de soldador</div></div>
       <div class="cm-tile"><div class="cm-tile-l">Último reporte RT</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="ultimo_reporte" data-row="0" data-fmt="fecha">—</div><div class="cm-tile-s cm-rt-age">—</div></div>
     </div>
     <div class="cm-grid">
+      <div class="cm-card wide" id="card-rt-sem">
+        <h3>Rechazo RT por semana</h3>
+        <p class="cm-note">Juntas radiografiadas en primera toma por semana del reporte; la línea marca el % de rechazo.</p>
+        <div class="cm-legend" id="leg-rt-sem"></div>
+        <div class="cm-chart dash-skeleton" id="ch-rt-sem" data-source="rt_semanal"></div>
+      </div>
       <div class="cm-card" id="card-rt-bar">
-        <h3>Resultado de radiografías por soldador</h3>
-        <p class="cm-note">Aceptadas y rechazadas; una junta con dos soldadores cuenta para ambos.</p>
+        <h3>Resultado RT por soldador</h3>
+        <p class="cm-note">Primera toma. La clave es la de C/S REAL cuando no coincide; una junta con dos soldadores cuenta para ambos.</p>
         <div class="cm-legend" id="leg-rt"></div>
         <div class="cm-rank" id="rk-rt" data-source="rt_soldador"></div>
       </div>
       <div class="cm-card" id="card-rt-tb">
-        <h3>Detalle RT por soldador</h3>
+        <h3>Detalle RT y PT por soldador</h3>
         <div class="cm-tablebox"><table class="cm-table" id="tb-rt" data-source="rt_soldador" data-row-key="clave">
-          <thead><tr><th class="t" data-field="clave">Clave</th><th data-field="radiografias">Radiografías</th><th data-field="aceptadas">Aceptadas</th><th data-field="rechazadas">Rechazadas</th><th data-field="sin_resultado">Sin resultado</th><th data-field="pct_rechazo">% rechazo</th></tr></thead><tbody></tbody></table></div>
+          <thead><tr><th class="t" data-field="clave">Clave</th><th data-field="rt_insp">RT</th><th data-field="rt_rechazadas">Rech.</th><th data-field="pct_rechazo_rt">% rech. RT</th><th data-field="reparadas_ok">Reparadas</th><th data-field="reparacion_pend">Por reparar</th><th data-field="pt_insp">PT</th><th data-field="pct_rechazo_pt">% rech. PT</th><th data-field="claves_corregidas">Clave corregida</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
   </section>

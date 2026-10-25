@@ -67,7 +67,7 @@ html = f'''<!doctype html>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 </head><body><div id="dash-root">
 {body}
-<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Consolidado RT-PT, Curva S) · Actualizado {ts} (hora de México)</p>
+<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado {ts} (hora de México)</p>
 </div>
 <script>{shim}</script>
 <script>{calcs}</script>

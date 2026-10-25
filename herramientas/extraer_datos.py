@@ -64,14 +64,39 @@ for col,rol in [('soldador','Soldador'),('tubero','Tubero')]:
             p.loc[len(p)]=dict(clave=c,nombre=nm,rol=rol,frente='SIN ASIGNAR',responsable='Sin asignar')
 p.to_csv(O+'personal.csv',index=False); print(p.rol.value_counts().to_dict()); print(p[p.frente=='SIN ASIGNAR'])
 # rt
-rt=pd.read_excel(F,sheet_name='Consolidado RT-PT',engine='pyxlsb')
-rto=pd.DataFrame({'reporte':rt['No. Reporte'].astype(str).str.strip(),'fecha':rt['Fecha Reporte'].map(d),
- 'isometrico':rt['Linea/ISO o Dibujo No.'].astype(str).str.strip(),'junta':rt['N Junta'].astype(str).str.strip(),
- 'diam':pd.to_numeric(rt['Diam. Junta'],errors='coerce'),'soldadores':rt['ID Soldador'].map(k),
- 'resultado':rt['Estado'].map(lambda x: '' if pd.isna(x) else str(x).strip())})
-rto['resultado']=rto.resultado.replace({'':'Sin resultado capturado','Revisar (marca ambigua)':'Revisar'})
-rto['soldadores']=rto.soldadores.replace({'80':''})
-rto.insert(0,'id',range(1,len(rto)+1))
+# --- Calidad: hojas RESUMEN RT y RESUMEN PT (validación de soldadura) ---
+# RT: B reporte, C fecha, D isométrico, E junta, F Ø, G C/S, H C/S REAL, I resultado, J-L 1ra reparación, M-O 2da reparación, P observaciones (proveedor)
+# PT: B reporte, C fecha, D isométrico, E junta, F Ø, G C/S, H resultado, I-K 1ra reparación, L-N 2da reparación, O observaciones
+# Regla de clave: si la columna H (C/S REAL) de RESUMEN RT trae una clave, esa manda sobre la de la columna G.
+def hoja(nombre):
+    with wb.get_sheet(nombre) as sh:
+        R=[[c.v for c in r] for r in sh.rows()]
+    w=max(len(r) for r in R); R=[r+[None]*(w-len(r)) for r in R]
+    df=pd.DataFrame(R[1:]); return df[df[3].notna()|df[4].notna()]
+def claves(x):
+    s=k(x)
+    if s in ('','N/A','NA','-'): return ''
+    return ', '.join(c for c in [c.strip() for c in s.replace('/',',').replace(' Y ',',').split(',')] if c)
+def res(x):
+    s=k(x)
+    return {'D/N':'Aceptada','F/N':'Rechazada'}.get(s, s.capitalize() if s else '')
+def diam(x):
+    s=str(x).replace('\u00d8','').replace('"','').strip() if x is not None else ''
+    try:
+        if ' ' in s and '/' in s: a,b=s.split(' '); n,dd=b.split('/'); return float(a)+float(n)/float(dd)
+        if '/' in s: n,dd=s.split('/'); return float(n)/float(dd)
+        return float(s)
+    except: return None
+out=[]
+for metodo,nombre,c in [('RT','RESUMEN RT',dict(cs=6,real=7,r=8,r1=11,r2=14,obs=15)),('PT','RESUMEN PT',dict(cs=6,real=None,r=7,r1=10,r2=13,obs=14))]:
+    df=hoja(nombre)
+    for _,r in df.iterrows():
+        cs=claves(r[c['cs']]); real=claves(r[c['real']]) if c['real'] is not None else ''
+        out.append(dict(metodo=metodo, reporte=k(r[1]), fecha=d(r[2]), isometrico=str(r[3]).strip() if r[3] is not None else '', junta=k(r[4]),
+            diam=diam(r[5]), soldador_reporte=cs, soldador_real=real, soldadores=real or cs, clave_corregida='si' if real and real!=cs else 'no',
+            resultado=res(r[c['r']]), reparacion1=res(r[c['r1']]), reparacion2=res(r[c['r2']]),
+            proveedor=str(r[c['obs']]).strip() if r[c['obs']] is not None else ''))
+rto=pd.DataFrame(out); rto.insert(0,'id',range(1,len(rto)+1))
 rto.to_csv(O+'rt.csv',index=False); print(rto.fecha.value_counts().to_dict(), rto.resultado.value_counts().to_dict())
 # curva
 cs=[]
