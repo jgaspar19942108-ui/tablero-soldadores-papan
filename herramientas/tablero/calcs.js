@@ -451,3 +451,27 @@ dash.calc('rt_sin_ligar', {
     return [{ rt: x.filter((r) => r.metodo === 'RT').length, pt: x.filter((r) => r.metodo === 'PT').length, otras_areas: rt.filter((r) => !areas.has(r.area)).length }];
   },
 });
+
+dash.calc('curva_reprog', {
+  inputs: ['juntas', 'curva_s'],
+  title: 'Curva reprogramada a la meta',
+  description: 'Curva S real hasta la fecha de corte y, desde ahí, el saldo pendiente repartido en línea recta semana a semana hasta la meta de término del 10 nov 2026.',
+  fn: (juntas, curva_s) => {
+    const D = (s) => new Date(s + 'T00:00:00Z');
+    const iso = (t) => t.toISOString().slice(0, 10);
+    const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
+    const meta = '2026-11-10';
+    const J = juntas.filter((r) => r.cancelada !== 'si');
+    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
+    const max = f[f.length - 1];
+    const total = Number(curva_s.find((r) => r.semana === 'Cierre').pulg_reprog_acum);
+    const sold = J.filter((r) => r.fecha_soldadura).reduce((t, r) => t + Number(r.diam), 0);
+    const out = curva_s.filter((r) => r.semana !== 'Cierre' && r.fecha < max && r.pulg_real_acum !== '')
+      .map((r) => ({ fecha: r.fecha, pulg_reprog_acum: Number(r.pulg_real_acum) }));
+    out.push({ fecha: max, pulg_reprog_acum: sold });
+    const dias = (D(meta) - D(max)) / 864e5;
+    for (let d = 7; d < dias; d += 7) out.push({ fecha: add(max, d), pulg_reprog_acum: sold + (total - sold) * d / dias });
+    if (dias > 0) out.push({ fecha: meta, pulg_reprog_acum: total });
+    return out;
+  },
+});

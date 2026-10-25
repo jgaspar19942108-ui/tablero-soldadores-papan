@@ -315,7 +315,7 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 </div>
 
 
-<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 25/10/2026 12:30 (hora de México)</p>
+<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 25/10/2026 12:35 (hora de México)</p>
 </div>
 <script>
 window.dash = (() => {
@@ -796,6 +796,30 @@ dash.calc('rt_sin_ligar', {
     return [{ rt: x.filter((r) => r.metodo === 'RT').length, pt: x.filter((r) => r.metodo === 'PT').length, otras_areas: rt.filter((r) => !areas.has(r.area)).length }];
   },
 });
+
+dash.calc('curva_reprog', {
+  inputs: ['juntas', 'curva_s'],
+  title: 'Curva reprogramada a la meta',
+  description: 'Curva S real hasta la fecha de corte y, desde ahí, el saldo pendiente repartido en línea recta semana a semana hasta la meta de término del 10 nov 2026.',
+  fn: (juntas, curva_s) => {
+    const D = (s) => new Date(s + 'T00:00:00Z');
+    const iso = (t) => t.toISOString().slice(0, 10);
+    const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
+    const meta = '2026-11-10';
+    const J = juntas.filter((r) => r.cancelada !== 'si');
+    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
+    const max = f[f.length - 1];
+    const total = Number(curva_s.find((r) => r.semana === 'Cierre').pulg_reprog_acum);
+    const sold = J.filter((r) => r.fecha_soldadura).reduce((t, r) => t + Number(r.diam), 0);
+    const out = curva_s.filter((r) => r.semana !== 'Cierre' && r.fecha < max && r.pulg_real_acum !== '')
+      .map((r) => ({ fecha: r.fecha, pulg_reprog_acum: Number(r.pulg_real_acum) }));
+    out.push({ fecha: max, pulg_reprog_acum: sold });
+    const dias = (D(meta) - D(max)) / 864e5;
+    for (let d = 7; d < dias; d += 7) out.push({ fecha: add(max, d), pulg_reprog_acum: sold + (total - sold) * d / dias });
+    if (dias > 0) out.push({ fecha: meta, pulg_reprog_acum: total });
+    return out;
+  },
+});
 </script>
 <script>(() => {
   const root = document.querySelector('.cm');
@@ -924,6 +948,7 @@ dash.calc('rt_sin_ligar', {
     const P = (s) => new Date(s + 'T00:00:00Z');
     const plan = cr.map((r) => ({ x: P(r.fecha), y: +r.pulg_reprog_acum, f: r.fecha }));
     const real = cs.filter((r) => r.pulg_real_acum !== '' && r.pulg_real_acum != null).map((r) => ({ x: P(r.fecha), y: +r.pulg_real_acum, f: r.fecha }));
+    if (pr && (!real.length || real[real.length - 1].f < pr.fecha_corte)) real.push({ x: P(pr.fecha_corte), y: +pr.pulg_soldadas, f: pr.fecha_corte });
     const proy = cp.map((r) => ({ x: P(r.fecha), y: +r.pulg_proyectadas, f: r.fecha }));
     const C = [color(0), 'var(--cds-chart-muted)', color(0)];
     legend(document.getElementById('leg-curva'), [[C[0], 'Real'], [C[1], 'Reprogramado a la meta'], [C[2], 'Proyección al ritmo actual', true]]);

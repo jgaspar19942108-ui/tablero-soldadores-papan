@@ -125,6 +125,7 @@
     const P = (s) => new Date(s + 'T00:00:00Z');
     const plan = cr.map((r) => ({ x: P(r.fecha), y: +r.pulg_reprog_acum, f: r.fecha }));
     const real = cs.filter((r) => r.pulg_real_acum !== '' && r.pulg_real_acum != null).map((r) => ({ x: P(r.fecha), y: +r.pulg_real_acum, f: r.fecha }));
+    if (pr && (!real.length || real[real.length - 1].f < pr.fecha_corte)) real.push({ x: P(pr.fecha_corte), y: +pr.pulg_soldadas, f: pr.fecha_corte });
     const proy = cp.map((r) => ({ x: P(r.fecha), y: +r.pulg_proyectadas, f: r.fecha }));
     const C = [color(0), 'var(--cds-chart-muted)', color(0)];
     legend(document.getElementById('leg-curva'), [[C[0], 'Real'], [C[1], 'Reprogramado a la meta'], [C[2], 'Proyección al ritmo actual', true]]);
