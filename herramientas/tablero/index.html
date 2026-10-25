@@ -85,7 +85,7 @@
       <button role="tab" data-tab="resumen" aria-selected="true">Resumen</button>
       <button role="tab" data-tab="soldadores" aria-selected="false">Soldadores</button>
       <button role="tab" data-tab="tuberos" aria-selected="false">Tuberos</button>
-      <button role="tab" data-tab="calidad" aria-selected="false">Calidad RT</button>
+      <button role="tab" data-tab="calidad" aria-selected="false">Calidad RT/PT</button>
     </div>
     <div class="cm-seg-wrap" id="periodo-ctl">
       <span>Periodo</span>
@@ -224,6 +224,23 @@
 
   <!-- CALIDAD -->
   <section class="cm-sec cm-page" id="calidad" hidden>
+    <h2 id="pendiente-inspeccion">Pendiente de inspección · RT y PT al 100% de las juntas soldadas</h2>
+    <div class="cm-tiles">
+      <div class="cm-tile"><div class="cm-tile-l">Juntas soldadas por radiografiar (RT)</div><div class="cm-tile-v dash-skeleton cm-pend" data-source="inspeccion" data-field="rt_pend" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="inspeccion" data-field="pct_rt" data-where="area=TOTAL" data-fmt="pct">—</span> de <span data-source="inspeccion" data-field="soldadas" data-where="area=TOTAL" data-fmt="int">—</span> soldadas ya con RT</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas soldadas por aplicar PT</div><div class="cm-tile-v dash-skeleton cm-pend" data-source="inspeccion" data-field="pt_pend" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="inspeccion" data-field="pct_pt" data-where="area=TOTAL" data-fmt="pct">—</span> de las soldadas ya con PT</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Juntas rechazadas en RT sin reparar</div><div class="cm-tile-v dash-skeleton" data-source="inspeccion" data-field="rt_por_reparar" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s">ligadas a la bitácora</div></div>
+      <div class="cm-tile"><div class="cm-tile-l">Inspeccionadas sin fecha de soldadura</div><div class="cm-tile-v dash-skeleton" data-source="inspeccion" data-field="insp_sin_fecha" data-where="area=TOTAL" data-fmt="int">—</div><div class="cm-tile-s">tienen RT o PT pero en la bitácora no figuran soldadas</div></div>
+    </div>
+    <div class="cm-grid">
+      <div class="cm-card wide" id="card-insp-area">
+        <h3>Pendiente de RT y PT por área</h3>
+        <p class="cm-note">Juntas soldadas sin inspección ligada. Ordenado por el total pendiente. <span class="cm-sinligar" data-source="rt_sin_ligar"></span></p>
+        <div class="cm-legend" id="leg-insp"></div>
+        <div class="cm-tablebox" style="max-height:none"><table class="cm-table" id="tb-insp" data-source="inspeccion" data-row-key="area">
+          <thead><tr><th class="t" data-field="area">Área</th><th data-field="soldadas">Soldadas</th><th data-field="rt_hechas">Con RT</th><th data-field="rt_pend">Por RT</th><th class="t" data-field="pct_rt">Avance RT</th><th data-field="pt_hechas">Con PT</th><th data-field="pt_pend">Por PT</th><th class="t" data-field="pct_pt">Avance PT</th><th data-field="rt_por_reparar">RT por reparar</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <h2>Resultados de RT y PT</h2>
     <div class="cm-tiles">
       <div class="cm-tile"><div class="cm-tile-l">Juntas con RT (primera toma)</div><div class="cm-tile-v dash-skeleton" data-source="rt_resumen" data-field="rt_insp" data-row="0" data-fmt="int">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="rt_aceptadas" data-row="0" data-fmt="int">—</span> dentro de norma</div></div>
       <div class="cm-tile"><div class="cm-tile-l">Rechazo RT</div><div class="cm-tile-v dash-skeleton cm-rech" data-source="rt_resumen" data-field="pct_rechazo_rt" data-row="0" data-fmt="pct">—</div><div class="cm-tile-s"><span data-source="rt_resumen" data-field="rt_rechazadas" data-row="0" data-fmt="int">—</span> juntas fuera de norma</div></div>

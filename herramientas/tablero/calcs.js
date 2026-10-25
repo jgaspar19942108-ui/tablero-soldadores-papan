@@ -412,3 +412,40 @@ dash.calc('rt_semanal', {
     return Object.values(g).sort((a, b) => (a.semana < b.semana ? -1 : 1)).map((o) => ({ ...o, pct_rechazo: o.rt_insp ? o.rt_rechazadas / o.rt_insp : null }));
   },
 });
+
+dash.calc('inspeccion', {
+  inputs: ['juntas'],
+  title: 'Pendiente de inspección por área',
+  description: 'Juntas soldadas (sin canceladas) por área contra las que ya tienen RT y PT ligados en los resúmenes de validación; todas las juntas requieren RT y PT al 100%.',
+  fn: (juntas) => {
+    const J = juntas.filter((r) => r.cancelada !== 'si');
+    const g = {};
+    const row = (a) => (g[a] ??= { area: a, soldadas: 0, rt_hechas: 0, pt_hechas: 0, rt_por_reparar: 0, rt_pend_bw: 0, rt_pend_sw: 0, pt_pend_bw: 0, pt_pend_sw: 0, insp_sin_fecha: 0 });
+    J.forEach((r) => {
+      const a = r.area || '(sin área)';
+      if (!r.fecha_soldadura) { if (r.rt || r.pt) row(a).insp_sin_fecha++; return; }
+      for (const o of [row(a), row('TOTAL')]) {
+        o.soldadas++;
+        if (r.rt) o.rt_hechas++; else if (r.tipo === 'SW') o.rt_pend_sw++; else o.rt_pend_bw++;
+        if (r.pt) o.pt_hechas++; else if (r.tipo === 'SW') o.pt_pend_sw++; else o.pt_pend_bw++;
+        if (r.rt === 'Rechazada') o.rt_por_reparar++;
+      }
+    });
+    J.forEach((r) => { if (!r.fecha_soldadura && (r.rt || r.pt)) row('TOTAL').insp_sin_fecha++; });
+    return Object.values(g).map((o) => ({
+      ...o, rt_pend: o.soldadas - o.rt_hechas, pt_pend: o.soldadas - o.pt_hechas,
+      pct_rt: o.soldadas ? o.rt_hechas / o.soldadas : null, pct_pt: o.soldadas ? o.pt_hechas / o.soldadas : null,
+    })).sort((a, b) => (a.area === 'TOTAL') - (b.area === 'TOTAL') || (b.rt_pend + b.pt_pend) - (a.rt_pend + a.pt_pend));
+  },
+});
+
+dash.calc('rt_sin_ligar', {
+  inputs: ['juntas', 'rt'],
+  title: 'Inspecciones sin junta en la bitácora',
+  description: 'Registros de RT y PT de áreas que sí están en la bitácora pero cuyo isométrico y junta no se encontraron en ella; no cuentan como inspección hecha.',
+  fn: (juntas, rt) => {
+    const areas = new Set(juntas.map((r) => r.area));
+    const x = rt.filter((r) => areas.has(r.area) && !r.junta_id);
+    return [{ rt: x.filter((r) => r.metodo === 'RT').length, pt: x.filter((r) => r.metodo === 'PT').length, otras_areas: rt.filter((r) => !areas.has(r.area)).length }];
+  },
+});

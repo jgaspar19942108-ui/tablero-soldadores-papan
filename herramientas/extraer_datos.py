@@ -36,6 +36,7 @@ out=pd.DataFrame({
  'cancelada':wl.localizacion.astype(str).str.contains('CANC').map({True:'si',False:'no'}),
 })
 out.to_csv(O+'juntas.csv',index=False)
+juntas_df=out.copy()
 print(len(out), out.diam.sum(), out[out.fecha_soldadura!=''].diam.sum(), out.fecha_soldadura.max())
 # personal
 wb=open_workbook(F)
@@ -97,7 +98,58 @@ for metodo,nombre,c in [('RT','RESUMEN RT',dict(cs=6,real=7,r=8,r1=11,r2=14,obs=
             resultado=res(r[c['r']]), reparacion1=res(r[c['r1']]), reparacion2=res(r[c['r2']]),
             proveedor=str(r[c['obs']]).strip() if r[c['obs']] is not None else ''))
 rto=pd.DataFrame(out); rto.insert(0,'id',range(1,len(rto)+1))
-rto.to_csv(O+'rt.csv',index=False); print(rto.fecha.value_counts().to_dict(), rto.resultado.value_counts().to_dict())
+# Área de cada junta inspeccionada: se toma la clave de área del isométrico (A1500, SK-1200, R900...)
+# y se traduce al área que esa misma clave tiene en la bitácora (respeta las reasignaciones del Weld Log).
+import re
+def tok(iso):
+    m=re.search(r'(?<![A-Z0-9])(SK|A|R)-?(\d{3,4})(?!\d)', str(iso).upper())
+    return (m.group(1)+m.group(2)) if m else ''
+tmap=(pd.DataFrame({'t':juntas_df.isometrico.map(tok),'a':juntas_df.area}).query("t!='' and a!=''")
+      .groupby('t').a.agg(lambda x: x.value_counts().index[0]).to_dict())
+def area_de(iso):
+    t=tok(iso)
+    if not t: return ''
+    if t in tmap: return tmap[t]
+    pre,num=re.match(r'(SK|A|R)(\d+)',t).groups()
+    return ('SK-' if pre=='SK' else 'A-')+num
+rto.insert(6,'area',rto.isometrico.map(area_de))
+
+rto.to_csv(O+'rt.csv',index=False)
+# --- Ligar cada registro RT/PT con su junta de la bitácora (isométrico + junta) ---
+def niso(x):
+    t=str(x).upper()
+    t=re.sub(r'\(.*?\)','',t)
+    t=re.sub(r'^[\s\d"/\-]+(?=[A-Z])','',t)
+    return re.sub(r'[^A-Z0-9]','',t)
+def njun(x):
+    m=re.match(r'\s*J\s*-?\s*0*(\d+)\s*([A-Z]*)',str(x).upper())
+    if not m: return str(x).upper().strip()
+    suf=re.sub(r'R+$','',m.group(2))        # J-05R / J-05RR son reparaciones de la J-05
+    return 'J-%02d%s'%(int(m.group(1)),suf)
+jk=pd.DataFrame({'i':juntas_df.isometrico.map(niso),'j':juntas_df.junta.map(njun),'id':juntas_df.id})
+exact={(a,b):c for a,b,c in zip(jk.i,jk.j,jk.id)}
+porj={}
+for a,b,c in zip(jk.i,jk.j,jk.id): porj.setdefault(b,[]).append((a,c))
+def liga(iso,jun):
+    a,b=niso(iso),njun(jun)
+    if (a,b) in exact: return exact[(a,b)]
+    if len(a)>=10:
+        cand={c for k_,c in porj.get(b,[]) if k_.startswith(a) or a.startswith(k_)}
+        if len(cand)==1: return cand.pop()
+    return ''
+rto.insert(7,'junta_id',[liga(a,b) for a,b in zip(rto.isometrico,rto.junta)])
+# estado de cada junta de la bitácora por método: Aceptada / Rechazada (reparada o no)
+def estado(g):
+    if (g.resultado=='Aceptada').any() or (g.reparacion1=='Aceptada').any() or (g.reparacion2=='Aceptada').any():
+        return 'Rechazada-reparada' if (g.resultado=='Rechazada').any() else 'Aceptada'
+    if (g.resultado=='Rechazada').any(): return 'Rechazada'
+    return 'Registrada'
+for met in ['RT','PT']:
+    g=rto[(rto.metodo==met)&(rto.junta_id!='')].groupby('junta_id').apply(estado,include_groups=False).to_dict()
+    juntas_df[met.lower()]=juntas_df.id.map(g).fillna('')
+juntas_df.to_csv(O+'juntas.csv',index=False)
+rto.to_csv(O+'rt.csv',index=False)
+print(rto.fecha.value_counts().to_dict(), rto.resultado.value_counts().to_dict())
 # curva
 cs=[]
 with wb.get_sheet('Curva S') as sh:
