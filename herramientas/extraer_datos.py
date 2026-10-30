@@ -17,7 +17,11 @@ def d(x):
 def k(x):
     s='' if pd.isna(x) else str(x).strip().upper()
     return s
-wl=pd.read_excel(F,sheet_name='Weld Log Detailed',engine='pyxlsb')
+# la hoja de la bitácora se ha llamado 'Weld Log Detailed' y 'Weld Log '; se busca por nombre sin importar espacios ni mayúsculas
+_hojas=pd.ExcelFile(F,engine='pyxlsb').sheet_names
+_wl=next((h for h in _hojas if h.strip().lower()=='weld log detailed'),None) or next((h for h in _hojas if h.strip().lower().startswith('weld log')),None)
+if _wl is None: raise SystemExit('No se encontró la hoja de la bitácora (Weld Log) en el Excel')
+wl=pd.read_excel(F,sheet_name=_wl,engine='pyxlsb')
 wl=wl[wl['Drawing No'].notna() | wl['Diam'].notna()]
 out=pd.DataFrame({
  'id':range(1,len(wl)+1),
@@ -35,6 +39,13 @@ out=pd.DataFrame({
  'tubero':wl['Tubero'].map(k),
  'cancelada':wl.localizacion.astype(str).str.contains('CANC').map({True:'si',False:'no'}),
 })
+# juntas sin área capturada: se toma el área del nombre del isométrico (…-SK-1200-02 → SK-1200)
+import re as _re
+def _area_iso(iso):
+    m=_re.search(r'(?<![A-Z0-9])(SK|A)-?(\d{3,4})(?!\d)', str(iso).upper())
+    return (('SK-' if m.group(1)=='SK' else 'A-')+m.group(2)) if m else ''
+_sin=out.area==''
+out.loc[_sin,'area']=out.loc[_sin,'isometrico'].map(_area_iso)
 out.to_csv(O+'juntas.csv',index=False)
 juntas_df=out.copy()
 print(len(out), out.diam.sum(), out[out.fecha_soldadura!=''].diam.sum(), out.fecha_soldadura.max())
