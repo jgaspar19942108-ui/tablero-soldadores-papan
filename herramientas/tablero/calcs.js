@@ -250,25 +250,36 @@ dash.calc('responsables', {
 dash.calc('servicios', {
   inputs: ['juntas'],
   title: 'Avance por servicio',
-  description: 'Pulgadas-Ø totales y soldadas por servicio según la bitácora de soldadura, con su avance y las pulgadas soldadas en la semana en curso.',
+  description: 'Por servicio (sin canceladas): juntas y pulgadas-Ø totales, soldadas y pendientes, avance, lo soldado en la semana en curso, juntas de campo pendientes y juntas soldadas sin RT (BW) o sin PT (SW); incluye una fila TOTAL.',
   fn: (juntas) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
     const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
-    const J = juntas.filter((r) => r.cancelada !== 'si' && r.servicio && r.servicio !== 'SIN CLASIFICAR');
+    const J = juntas.filter((r) => r.cancelada !== 'si');
     const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
     const max = f[f.length - 1];
     const lunes = add(max, -((D(max).getUTCDay() + 6) % 7));
     const g = {};
+    const row = (k) => (g[k] ??= { servicio: k, juntas_total: 0, juntas_soldadas: 0, pulg_total: 0, pulg_soldadas: 0, pulg_semana: 0, juntas_semana: 0, campo_pend: 0, armadas_sin_soldar: 0, rt_pend: 0, pt_pend: 0 });
     J.forEach((r) => {
-      const o = (g[r.servicio] ??= { servicio: r.servicio, pulg_total: 0, pulg_soldadas: 0, pulg_semana: 0 });
+      const k = r.servicio && r.servicio !== 'SIN CLASIFICAR' ? r.servicio : 'SIN CLASIFICAR';
       const d = Number(r.diam);
-      o.pulg_total += d;
-      if (r.fecha_soldadura) o.pulg_soldadas += d;
-      if (r.fecha_soldadura >= lunes) o.pulg_semana += d;
+      for (const o of [row(k), row('TOTAL')]) {
+        o.juntas_total++; o.pulg_total += d;
+        if (r.fecha_soldadura) {
+          o.juntas_soldadas++; o.pulg_soldadas += d;
+          if (r.fecha_soldadura >= lunes) { o.pulg_semana += d; o.juntas_semana++; }
+          if (r.tipo === 'BW' && !r.rt) o.rt_pend++;
+          if (r.tipo === 'SW' && !r.pt) o.pt_pend++;
+        } else {
+          if (r.tipo_junta === 'Campo') o.campo_pend++;
+          if (r.fecha_fitup) o.armadas_sin_soldar++;
+        }
+      }
     });
-    return Object.values(g).map((o) => ({ ...o, avance: o.pulg_total ? o.pulg_soldadas / o.pulg_total : null, pulg_pendientes: o.pulg_total - o.pulg_soldadas }))
-      .sort((a, b) => b.pulg_pendientes - a.pulg_pendientes);
+    return Object.values(g).map((o) => ({ ...o, juntas_pend: o.juntas_total - o.juntas_soldadas, pulg_pendientes: o.pulg_total - o.pulg_soldadas,
+      avance: o.pulg_total ? o.pulg_soldadas / o.pulg_total : null, avance_juntas: o.juntas_total ? o.juntas_soldadas / o.juntas_total : null }))
+      .sort((a, b) => (a.servicio === 'TOTAL') - (b.servicio === 'TOTAL') || b.pulg_pendientes - a.pulg_pendientes);
   },
 });
 

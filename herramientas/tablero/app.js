@@ -274,10 +274,28 @@
     });
   };
 
+  const drawServTabla = () => {
+    const t = document.getElementById('tb-serv');
+    if (!tableState(t, ['servicios'])) { t.querySelector('tbody').replaceChildren(); return; }
+    const rows = rowsOf('servicios');
+    const tc = (s) => (s === 'TOTAL' ? 'TOTAL' : s.charAt(0) + s.slice(1).toLowerCase());
+    table('tb-serv', rows, [{ f: 'servicio', t: 1, fmt: tc }, { f: 'juntas_total', fmt: FMT.int }, { f: 'juntas_soldadas', fmt: FMT.int }, { f: 'juntas_pend', fmt: FMT.int }, { f: 'pulg_total', fmt: FMT.int }, { f: 'pulg_soldadas', fmt: FMT.int }, { f: 'pulg_pendientes', fmt: FMT.int }, { f: 'avance', t: 1, fmt: FMT.pct }, { f: 'pulg_semana', fmt: FMT.int }, { f: 'campo_pend', fmt: FMT.int }, { f: 'armadas_sin_soldar', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }], ['servicio']);
+    t.querySelectorAll('tbody tr').forEach((tr) => {
+      const r = rows.find((x) => encodeURIComponent(x.servicio) === tr.dataset.key); if (!r) return;
+      const td = tr.children[7];
+      const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:6rem';
+      const trk = document.createElement('div'); trk.className = 'cm-rank-track'; trk.style.flex = '1'; trk.style.height = '10px';
+      const fl = document.createElement('div'); fl.className = 'cm-rank-fill'; fl.style.width = (100 * (r.avance || 0)) + '%'; fl.style.background = r.avance < 0.4 ? 'var(--cds-chart-status-critical)' : color(0); trk.append(fl);
+      const l = document.createElement('span'); l.textContent = fPct(r.avance || 0); l.style.minWidth = '3.2rem'; l.style.textAlign = 'right';
+      w.append(trk, l); td.replaceChildren(w);
+      if (r.servicio === 'TOTAL') tr.style.fontWeight = '600';
+    });
+  };
+
   const drawServicios = () => {
     const el = document.getElementById('rk-serv');
     if (!prep(el, ['servicios'])) return;
-    const rows = rowsOf('servicios');
+    const rows = rowsOf('servicios').filter((r) => r.servicio !== 'TOTAL' && r.servicio !== 'SIN CLASIFICAR');
     rank(el, rows, {
       label: (r) => r.servicio.charAt(0) + r.servicio.slice(1).toLowerCase(), value: (r) => r.avance, max: 1,
       stack: (r) => [[r.avance, color(0)]],
@@ -477,7 +495,7 @@
   // ---------- draw ----------
   function draw() {
     fillMarks();
-    if (tab === 'resumen') { drawCurva(); drawSemanal(); drawDiario(); drawResp(); drawServicios(); }
+    if (tab === 'resumen') { drawCurva(); drawSemanal(); drawDiario(); drawResp(); drawServicios(); drawServTabla(); }
     if (tab === 'soldadores') drawPeople('sold');
     if (tab === 'tuberos') drawPeople('tub');
     if (tab === 'calidad') { drawInsp(); drawRT(); }

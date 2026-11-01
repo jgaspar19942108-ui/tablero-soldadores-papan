@@ -89,6 +89,8 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 .cm-emb-bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; background: color-mix(in srgb, var(--color-border-line) 45%, transparent); }
 .cm-emb-bar div { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 .cm-emb-nums { grid-column: 2; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+#tb-serv th, #tb-insp th { white-space: normal; vertical-align: bottom; }
+#tb-serv td { padding: 6px 6px; }
 .cm-sec { display: flex; flex-direction: column; gap: var(--cds-gap-md); }
 .cm-sec h2 { margin: var(--cds-gap-sm) 0 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
 .cm-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
@@ -195,6 +197,12 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
         <h3>Avance por servicio</h3>
         <p class="cm-note">Pulg-Ø soldadas contra el total de la bitácora; ordenados por lo que falta.</p>
         <div class="cm-rank" id="rk-serv" data-source="servicios"></div>
+      </div>
+      <div class="cm-card wide" id="card-serv-tabla">
+        <h3>Tabla de avance por servicio</h3>
+        <p class="cm-note">Juntas y pulg-Ø de la bitácora por servicio (sin canceladas). "Semana" es lo soldado en la semana en curso; "Por RT" son BW soldadas sin RT y "Por PT", SW soldadas sin PT. Ordenado por pulg-Ø pendientes.</p>
+        <div class="cm-tablebox" style="max-height:none"><table class="cm-table" id="tb-serv" data-source="servicios" data-row-key="servicio">
+          <thead><tr><th class="t" data-field="servicio">Servicio</th><th data-field="juntas_total">Juntas total</th><th data-field="juntas_soldadas">Juntas soldadas</th><th data-field="juntas_pend">Juntas pend.</th><th data-field="pulg_total">Pulg-Ø total</th><th data-field="pulg_soldadas">Pulg-Ø soldadas</th><th data-field="pulg_pendientes">Pulg-Ø pend.</th><th class="t" data-field="avance">Avance pulg-Ø</th><th data-field="pulg_semana">Semana</th><th data-field="campo_pend">Campo pend.</th><th data-field="armadas_sin_soldar">Armadas s/soldar</th><th data-field="rt_pend">Por RT</th><th data-field="pt_pend">Por PT</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
   </section>
@@ -315,7 +323,7 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 </div>
 
 
-<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 31/10/2026 18:37 (hora de México)</p>
+<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 31/10/2026 18:41 (hora de México)</p>
 </div>
 <script>
 window.dash = (() => {
@@ -595,25 +603,36 @@ dash.calc('responsables', {
 dash.calc('servicios', {
   inputs: ['juntas'],
   title: 'Avance por servicio',
-  description: 'Pulgadas-Ø totales y soldadas por servicio según la bitácora de soldadura, con su avance y las pulgadas soldadas en la semana en curso.',
+  description: 'Por servicio (sin canceladas): juntas y pulgadas-Ø totales, soldadas y pendientes, avance, lo soldado en la semana en curso, juntas de campo pendientes y juntas soldadas sin RT (BW) o sin PT (SW); incluye una fila TOTAL.',
   fn: (juntas) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
     const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
-    const J = juntas.filter((r) => r.cancelada !== 'si' && r.servicio && r.servicio !== 'SIN CLASIFICAR');
+    const J = juntas.filter((r) => r.cancelada !== 'si');
     const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
     const max = f[f.length - 1];
     const lunes = add(max, -((D(max).getUTCDay() + 6) % 7));
     const g = {};
+    const row = (k) => (g[k] ??= { servicio: k, juntas_total: 0, juntas_soldadas: 0, pulg_total: 0, pulg_soldadas: 0, pulg_semana: 0, juntas_semana: 0, campo_pend: 0, armadas_sin_soldar: 0, rt_pend: 0, pt_pend: 0 });
     J.forEach((r) => {
-      const o = (g[r.servicio] ??= { servicio: r.servicio, pulg_total: 0, pulg_soldadas: 0, pulg_semana: 0 });
+      const k = r.servicio && r.servicio !== 'SIN CLASIFICAR' ? r.servicio : 'SIN CLASIFICAR';
       const d = Number(r.diam);
-      o.pulg_total += d;
-      if (r.fecha_soldadura) o.pulg_soldadas += d;
-      if (r.fecha_soldadura >= lunes) o.pulg_semana += d;
+      for (const o of [row(k), row('TOTAL')]) {
+        o.juntas_total++; o.pulg_total += d;
+        if (r.fecha_soldadura) {
+          o.juntas_soldadas++; o.pulg_soldadas += d;
+          if (r.fecha_soldadura >= lunes) { o.pulg_semana += d; o.juntas_semana++; }
+          if (r.tipo === 'BW' && !r.rt) o.rt_pend++;
+          if (r.tipo === 'SW' && !r.pt) o.pt_pend++;
+        } else {
+          if (r.tipo_junta === 'Campo') o.campo_pend++;
+          if (r.fecha_fitup) o.armadas_sin_soldar++;
+        }
+      }
     });
-    return Object.values(g).map((o) => ({ ...o, avance: o.pulg_total ? o.pulg_soldadas / o.pulg_total : null, pulg_pendientes: o.pulg_total - o.pulg_soldadas }))
-      .sort((a, b) => b.pulg_pendientes - a.pulg_pendientes);
+    return Object.values(g).map((o) => ({ ...o, juntas_pend: o.juntas_total - o.juntas_soldadas, pulg_pendientes: o.pulg_total - o.pulg_soldadas,
+      avance: o.pulg_total ? o.pulg_soldadas / o.pulg_total : null, avance_juntas: o.juntas_total ? o.juntas_soldadas / o.juntas_total : null }))
+      .sort((a, b) => (a.servicio === 'TOTAL') - (b.servicio === 'TOTAL') || b.pulg_pendientes - a.pulg_pendientes);
   },
 });
 
@@ -1097,10 +1116,28 @@ dash.calc('curva_reprog', {
     });
   };
 
+  const drawServTabla = () => {
+    const t = document.getElementById('tb-serv');
+    if (!tableState(t, ['servicios'])) { t.querySelector('tbody').replaceChildren(); return; }
+    const rows = rowsOf('servicios');
+    const tc = (s) => (s === 'TOTAL' ? 'TOTAL' : s.charAt(0) + s.slice(1).toLowerCase());
+    table('tb-serv', rows, [{ f: 'servicio', t: 1, fmt: tc }, { f: 'juntas_total', fmt: FMT.int }, { f: 'juntas_soldadas', fmt: FMT.int }, { f: 'juntas_pend', fmt: FMT.int }, { f: 'pulg_total', fmt: FMT.int }, { f: 'pulg_soldadas', fmt: FMT.int }, { f: 'pulg_pendientes', fmt: FMT.int }, { f: 'avance', t: 1, fmt: FMT.pct }, { f: 'pulg_semana', fmt: FMT.int }, { f: 'campo_pend', fmt: FMT.int }, { f: 'armadas_sin_soldar', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }], ['servicio']);
+    t.querySelectorAll('tbody tr').forEach((tr) => {
+      const r = rows.find((x) => encodeURIComponent(x.servicio) === tr.dataset.key); if (!r) return;
+      const td = tr.children[7];
+      const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:6rem';
+      const trk = document.createElement('div'); trk.className = 'cm-rank-track'; trk.style.flex = '1'; trk.style.height = '10px';
+      const fl = document.createElement('div'); fl.className = 'cm-rank-fill'; fl.style.width = (100 * (r.avance || 0)) + '%'; fl.style.background = r.avance < 0.4 ? 'var(--cds-chart-status-critical)' : color(0); trk.append(fl);
+      const l = document.createElement('span'); l.textContent = fPct(r.avance || 0); l.style.minWidth = '3.2rem'; l.style.textAlign = 'right';
+      w.append(trk, l); td.replaceChildren(w);
+      if (r.servicio === 'TOTAL') tr.style.fontWeight = '600';
+    });
+  };
+
   const drawServicios = () => {
     const el = document.getElementById('rk-serv');
     if (!prep(el, ['servicios'])) return;
-    const rows = rowsOf('servicios');
+    const rows = rowsOf('servicios').filter((r) => r.servicio !== 'TOTAL' && r.servicio !== 'SIN CLASIFICAR');
     rank(el, rows, {
       label: (r) => r.servicio.charAt(0) + r.servicio.slice(1).toLowerCase(), value: (r) => r.avance, max: 1,
       stack: (r) => [[r.avance, color(0)]],
@@ -1300,7 +1337,7 @@ dash.calc('curva_reprog', {
   // ---------- draw ----------
   function draw() {
     fillMarks();
-    if (tab === 'resumen') { drawCurva(); drawSemanal(); drawDiario(); drawResp(); drawServicios(); }
+    if (tab === 'resumen') { drawCurva(); drawSemanal(); drawDiario(); drawResp(); drawServicios(); drawServTabla(); }
     if (tab === 'soldadores') drawPeople('sold');
     if (tab === 'tuberos') drawPeople('tub');
     if (tab === 'calidad') { drawInsp(); drawRT(); }
