@@ -248,10 +248,10 @@ dash.calc('responsables', {
 });
 
 dash.calc('servicios', {
-  inputs: ['juntas'],
+  inputs: ['juntas', 'volumenes'],
   title: 'Avance por servicio',
-  description: 'Por servicio (sin canceladas): juntas y pulgadas-Ø totales, soldadas y pendientes, avance, lo soldado en la semana en curso, juntas de campo pendientes y juntas soldadas sin RT (BW) o sin PT (SW); incluye una fila TOTAL.',
-  fn: (juntas) => {
+  description: 'Por servicio: juntas y pulgadas-Ø totales de ingeniería (hoja Volumenes, igual que el DASHBOARD del Excel), soldadas según la bitácora (sin canceladas) y pendientes, avance, lo soldado en la semana en curso, juntas de campo pendientes y juntas soldadas sin RT (BW) o sin PT (SW); incluye una fila TOTAL.',
+  fn: (juntas, volumenes) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
     const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
@@ -277,17 +277,25 @@ dash.calc('servicios', {
         }
       }
     });
-    return Object.values(g).map((o) => ({ ...o, juntas_pend: o.juntas_total - o.juntas_soldadas, pulg_pendientes: o.pulg_total - o.pulg_soldadas,
+    const V = Object.fromEntries(volumenes.map((r) => [r.servicio, r]));
+    Object.values(g).forEach((o) => {
+      o.pulg_bitacora = o.pulg_total; o.juntas_bitacora = o.juntas_total;
+      const v = V[o.servicio];
+      if (v) { o.pulg_total = Number(v.pulg_total); o.juntas_total = Number(v.juntas_total); }
+      else { o.pulg_total = null; o.juntas_total = null; }
+    });
+    return Object.values(g).map((o) => ({ ...o,
+      juntas_pend: o.juntas_total == null ? null : o.juntas_total - o.juntas_soldadas, pulg_pendientes: o.pulg_total == null ? null : o.pulg_total - o.pulg_soldadas,
       avance: o.pulg_total ? o.pulg_soldadas / o.pulg_total : null, avance_juntas: o.juntas_total ? o.juntas_soldadas / o.juntas_total : null }))
-      .sort((a, b) => (a.servicio === 'TOTAL') - (b.servicio === 'TOTAL') || b.pulg_pendientes - a.pulg_pendientes);
+      .sort((a, b) => (a.servicio === 'TOTAL') - (b.servicio === 'TOTAL') || (a.pulg_pendientes == null) - (b.pulg_pendientes == null) || b.pulg_pendientes - a.pulg_pendientes);
   },
 });
 
 dash.calc('proyeccion', {
-  inputs: ['juntas', 'curva_s'],
+  inputs: ['juntas', 'curva_s', 'volumenes'],
   title: 'Proyección de cierre',
-  description: 'Avance contra el total del programa (Curva S), ritmo de las últimas 4 semanas, ritmo necesario para la meta de término del 10 nov 2026, fecha estimada de cierre y soldadores necesarios (6 días hábiles por semana).',
-  fn: (juntas, curva_s) => {
+  description: 'Avance contra el total de ingeniería de la hoja Volumenes (el mismo de la hoja DASHBOARD del Excel), en pulgadas-Ø y en juntas; ritmo de las últimas 4 semanas, ritmo necesario para la meta del 10 nov 2026, fecha estimada de cierre y soldadores necesarios (6 días hábiles por semana).',
+  fn: (juntas, curva_s, volumenes) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
     const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
@@ -295,8 +303,8 @@ dash.calc('proyeccion', {
     const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
     const max = f[f.length - 1];
     const lunes = add(max, -((D(max).getUTCDay() + 6) % 7));
-    const cierre = curva_s.find((r) => r.semana === 'Cierre');
-    const total = Number(cierre.pulg_reprog_acum), meta = '2026-11-10'; // meta de término fijada por el usuario
+    const vt = volumenes.find((r) => r.servicio === 'TOTAL');
+    const total = Number(vt.pulg_total), juntasTotal = Number(vt.juntas_total), meta = '2026-11-10'; // meta de término fijada por el usuario
     const sum = (a) => a.reduce((t, r) => t + Number(r.diam), 0);
     const sold = sum(J.filter((r) => r.fecha_soldadura));
     const pend = total - sold;
@@ -312,6 +320,7 @@ dash.calc('proyeccion', {
     const plan = curva_s.filter((r) => r.semana !== 'Cierre' && r.fecha <= max).sort((a, b) => (a.fecha < b.fecha ? -1 : 1)).pop();
     return [{
       fecha_corte: max, pulg_total_programa: total, pulg_soldadas: sold, avance: sold / total, pulg_pendientes: pend,
+      juntas_total: juntasTotal, juntas_soldadas: J.filter((r) => r.fecha_soldadura).length, avance_juntas: J.filter((r) => r.fecha_soldadura).length / juntasTotal,
       fecha_meta: meta, dias_a_meta: diasRest,
       ritmo_4sem: ritmo, ritmo_necesario: ritmoNec, brecha_ritmo: ritmoNec != null ? ritmoNec - ritmo : null,
       semanas_al_ritmo: semanas, fecha_estimada: fechaEst,
@@ -326,17 +335,17 @@ dash.calc('proyeccion', {
 });
 
 dash.calc('curva_proyeccion', {
-  inputs: ['juntas', 'curva_s'],
+  inputs: ['juntas', 'curva_s', 'volumenes'],
   title: 'Curva proyectada al ritmo actual',
-  description: 'Pulgadas-Ø acumuladas proyectadas semana a semana desde la fecha de corte al ritmo promedio de las últimas 4 semanas, hasta llegar al total del programa.',
-  fn: (juntas, curva_s) => {
+  description: 'Pulgadas-Ø acumuladas proyectadas semana a semana desde la fecha de corte al ritmo promedio de las últimas 4 semanas, hasta llegar al total de ingeniería (hoja Volumenes).',
+  fn: (juntas, curva_s, volumenes) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
     const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
     const J = juntas.filter((r) => r.cancelada !== 'si');
     const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
     const max = f[f.length - 1];
-    const total = Number(curva_s.find((r) => r.semana === 'Cierre').pulg_reprog_acum);
+    const total = Number(volumenes.find((r) => r.servicio === 'TOTAL').pulg_total);
     const sum = (a) => a.reduce((t, r) => t + Number(r.diam), 0);
     let acc = sum(J.filter((r) => r.fecha_soldadura));
     const ritmo = sum(J.filter((r) => r.fecha_soldadura >= add(max, -27) && r.fecha_soldadura <= max)) / 4;
@@ -464,10 +473,10 @@ dash.calc('rt_sin_ligar', {
 });
 
 dash.calc('curva_reprog', {
-  inputs: ['juntas', 'curva_s'],
+  inputs: ['juntas', 'curva_s', 'volumenes'],
   title: 'Curva reprogramada a la meta',
   description: 'Curva S real hasta la fecha de corte y, desde ahí, el saldo pendiente repartido en línea recta semana a semana hasta la meta de término del 10 nov 2026.',
-  fn: (juntas, curva_s) => {
+  fn: (juntas, curva_s, volumenes) => {
     const D = (s) => new Date(s + 'T00:00:00Z');
     const iso = (t) => t.toISOString().slice(0, 10);
     const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
@@ -475,7 +484,7 @@ dash.calc('curva_reprog', {
     const J = juntas.filter((r) => r.cancelada !== 'si');
     const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
     const max = f[f.length - 1];
-    const total = Number(curva_s.find((r) => r.semana === 'Cierre').pulg_reprog_acum);
+    const total = Number(volumenes.find((r) => r.servicio === 'TOTAL').pulg_total);
     const sold = J.filter((r) => r.fecha_soldadura).reduce((t, r) => t + Number(r.diam), 0);
     const out = curva_s.filter((r) => r.semana !== 'Cierre' && r.fecha < max && r.pulg_real_acum !== '')
       .map((r) => ({ fecha: r.fecha, pulg_reprog_acum: Number(r.pulg_real_acum) }));

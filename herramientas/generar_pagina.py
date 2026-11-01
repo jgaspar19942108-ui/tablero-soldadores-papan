@@ -2,7 +2,7 @@
 import sys, json, re, datetime as dt, pandas as pd
 src, dashdir, out = sys.argv[1], sys.argv[2], sys.argv[3]   # carpeta CSV, carpeta con index.html/calcs.js/app.js, archivo salida
 data = {}
-for k in ['juntas', 'personal', 'rt', 'curva_s']:
+for k in ['juntas', 'personal', 'rt', 'curva_s', 'volumenes']:
     df = pd.read_csv(f'{src}/{k}.csv', dtype=str, keep_default_na=False)
     data[k] = {'c': list(df.columns), 'r': df.values.tolist()}
 body = open(f'{dashdir}/index.html', encoding='utf-8').read()

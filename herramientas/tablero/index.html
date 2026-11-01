@@ -109,9 +109,9 @@
   <section class="cm-sec cm-page" id="resumen">
     <div class="cm-tiles">
       <div class="cm-tile" id="t-avance">
-        <div class="cm-tile-l">Avance físico (pulg-Ø soldadas / programa)</div>
+        <div class="cm-tile-l">Avance físico tubería (pulg-Ø)</div>
         <div class="cm-tile-v dash-skeleton" data-source="proyeccion" data-field="avance" data-row="0" data-fmt="pct">—</div>
-        <div class="cm-tile-s"><span data-source="proyeccion" data-field="pulg_soldadas" data-row="0" data-fmt="int">—</span> de <span data-source="proyeccion" data-field="pulg_total_programa" data-row="0" data-fmt="int">—</span> pulg-Ø</div>
+        <div class="cm-tile-s"><span data-source="proyeccion" data-field="pulg_soldadas" data-row="0" data-fmt="int">—</span> / <span data-source="proyeccion" data-field="pulg_total_programa" data-row="0" data-fmt="int">—</span> pulg-Ø · juntas <span data-source="proyeccion" data-field="avance_juntas" data-row="0" data-fmt="pct">—</span> (<span data-source="proyeccion" data-field="juntas_soldadas" data-row="0" data-fmt="int">—</span> / <span data-source="proyeccion" data-field="juntas_total" data-row="0" data-fmt="int">—</span>)</div>
       </div>
       <div class="cm-tile" id="t-pulg">
         <div class="cm-tile-l">Pulg-Ø soldadas · <span class="cm-per-name">semana en curso</span></div>
@@ -166,12 +166,12 @@
       </div>
       <div class="cm-card" id="card-serv">
         <h3>Avance por servicio</h3>
-        <p class="cm-note">Pulg-Ø soldadas contra el total de la bitácora; ordenados por lo que falta.</p>
+        <p class="cm-note">Pulg-Ø soldadas contra el total de ingeniería (hoja Volumenes); ordenados por lo que falta.</p>
         <div class="cm-rank" id="rk-serv" data-source="servicios"></div>
       </div>
       <div class="cm-card wide" id="card-serv-tabla">
         <h3>Tabla de avance por servicio</h3>
-        <p class="cm-note">Juntas y pulg-Ø de la bitácora por servicio (sin canceladas). "Semana" es lo soldado en la semana en curso; "Por RT" son BW soldadas sin RT y "Por PT", SW soldadas sin PT. Ordenado por pulg-Ø pendientes.</p>
+        <p class="cm-note">Totales de ingeniería de la hoja Volumenes (los mismos del DASHBOARD del Excel); soldado según la bitácora, sin canceladas. "Semana" es lo soldado en la semana en curso; "Por RT" son BW soldadas sin RT y "Por PT", SW soldadas sin PT. Ordenado por pulg-Ø pendientes.</p>
         <div class="cm-tablebox" style="max-height:none"><table class="cm-table" id="tb-serv" data-source="servicios" data-row-key="servicio">
           <thead><tr><th class="t" data-field="servicio">Servicio</th><th data-field="juntas_total">Juntas total</th><th data-field="juntas_soldadas">Juntas soldadas</th><th data-field="juntas_pend">Juntas pend.</th><th data-field="pulg_total">Pulg-Ø total</th><th data-field="pulg_soldadas">Pulg-Ø soldadas</th><th data-field="pulg_pendientes">Pulg-Ø pend.</th><th class="t" data-field="avance">Avance pulg-Ø</th><th data-field="pulg_semana">Semana</th><th data-field="campo_pend">Campo pend.</th><th data-field="armadas_sin_soldar">Armadas s/soldar</th><th data-field="rt_pend">Por RT</th><th data-field="pt_pend">Por PT</th></tr></thead><tbody></tbody></table></div>
       </div>

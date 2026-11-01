@@ -285,6 +285,7 @@
       const td = tr.children[7];
       const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:6rem';
       const trk = document.createElement('div'); trk.className = 'cm-rank-track'; trk.style.flex = '1'; trk.style.height = '10px';
+      if (r.avance == null) { td.textContent = '—'; return; }
       const fl = document.createElement('div'); fl.className = 'cm-rank-fill'; fl.style.width = (100 * (r.avance || 0)) + '%'; fl.style.background = r.avance < 0.4 ? 'var(--cds-chart-status-critical)' : color(0); trk.append(fl);
       const l = document.createElement('span'); l.textContent = fPct(r.avance || 0); l.style.minWidth = '3.2rem'; l.style.textAlign = 'right';
       w.append(trk, l); td.replaceChildren(w);
@@ -296,7 +297,7 @@
     const el = document.getElementById('rk-serv');
     if (!prep(el, ['servicios'])) return;
     const rows = rowsOf('servicios').filter((r) => r.servicio !== 'TOTAL' && r.servicio !== 'SIN CLASIFICAR');
-    rank(el, rows, {
+    rank(el, rows.filter((r) => r.avance != null), {
       label: (r) => r.servicio.charAt(0) + r.servicio.slice(1).toLowerCase(), value: (r) => r.avance, max: 1,
       stack: (r) => [[r.avance, color(0)]],
       valTxt: (r) => fPct(r.avance), valSub: (r) => `faltan ${fInt(r.pulg_pendientes)}`,

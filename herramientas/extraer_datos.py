@@ -169,3 +169,19 @@ with wb.get_sheet('Curva S') as sh:
         if i>=2 and v[1] is not None and v[0] is not None:
             cs.append(dict(semana=('Cierre' if v[0]=='CIERRE' else int(v[0])),fecha=d(v[1]),pulg_reprog_acum=v[2],pulg_real_acum=v[4] if v[4] not in ('',None) else ''))
 pd.DataFrame(cs).to_csv(O+'curva_s.csv',index=False); print(pd.DataFrame(cs).tail(6))
+# --- Volúmenes de ingeniería por servicio (hoja Volumenes): son los totales que usa la hoja DASHBOARD del Excel ---
+vol=[]
+with wb.get_sheet('Volumenes') as sh:
+    R_=[[c.v for c in r]+[None]*14 for r in sh.rows()]
+for r in R_[1:]:
+    serv=str(r[0]).strip().upper() if r[0] not in (None,'') else ''
+    if not serv:
+        if isinstance(r[5],(int,float)) and r[5]>0:
+            vol.append(dict(servicio='TOTAL',pulg_total=r[5],pulg_ejec_excel=r[6],juntas_total=r[9],juntas_ejec_excel=r[10]))
+        break
+    if isinstance(r[5],(int,float)):
+        vol.append(dict(servicio=serv,pulg_total=r[5],pulg_ejec_excel=r[6],juntas_total=r[9],juntas_ejec_excel=r[10]))
+vdf=pd.DataFrame(vol)
+if 'TOTAL' not in set(vdf.servicio):
+    vdf.loc[len(vdf)]=dict(servicio='TOTAL',pulg_total=vdf.pulg_total.sum(),pulg_ejec_excel=vdf.pulg_ejec_excel.sum(),juntas_total=vdf.juntas_total.sum(),juntas_ejec_excel=vdf.juntas_ejec_excel.sum())
+vdf.to_csv(O+'volumenes.csv',index=False); print(vdf.tail(3))
