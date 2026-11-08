@@ -2,29 +2,28 @@ clave,nombre,rol,frente,responsable
 RRR,Raul Ramirez Reyes,Soldador,EMC,Jaime Palmeros
 JMC,Jonathan Martinez Campechano,Soldador,EMC,Rigo
 CTR,Carlos Alfredo Tronco Romero,Soldador,EMC,Jaime Palmeros
-NAR,Noe Altamirano Ricardo,Soldador,COBERTIZO,Barbas
-EGJG,Erick Guadalupe Juarez Gomez,Soldador,COBERTIZO,Barbas
+NAR,Noe Altamirano Ricardo,Soldador,EMC,Barbas
+EGJG,Erick Guadalupe Juarez Gomez,Soldador,EMC,Barbas
 VMR,Victor Muñoz Ramirez,Soldador,EMC,Rigo
-FICZ,Francisco Israel Cardenas Zavala,Soldador,COBERTIZO,Barbas
+FICZ,Francisco Israel Cardenas Zavala,Soldador,EMC,Barbas
 OTU,Oscar Trujillo Uscanga,Soldador,EMC,Rigo
 IQL,Israel Quintana Luis,Soldador,EMC,Rigo
-DFS,David Fabian Silva,Soldador,COBERTIZO,Barbas
-AJG,Alex Jimenez Gonzalez,Soldador,COBERTIZO,Barbas
-SVG,Salvador Valerio Gonzalez,Soldador,COBERTIZO,Barbas
+DFS,David Fabian Silva,Soldador,EMC,Barbas
+AJG,Alex Jimenez Gonzalez,Soldador,EMC,Barbas
+SVG,Salvador Valerio Gonzalez,Soldador,EMC,Barbas
 RCM,Ramon Cabrera Malpica,Soldador,EMC,Jaime Palmeros
 RICH,Ruben Ignacio Cruz Hernandez,Soldador,EMC,Rigo
 SAT,Saul Arenas Torres,Soldador,EMC,Jaime Palmeros
-AMC,Aldo Moreno Canseco,Soldador,COBERTIZO,Barbas
+AMC,Aldo Moreno Canseco,Soldador,EMC,Barbas
 HSR,Hugo Salomon Roman,Soldador,EMC,Jaime Palmeros
 ZSSM,Zeferino Santiago San Martin,Soldador,EMC,Jaime Palmeros
 AAHB,Adan Alberto Hernandez Barenas,Soldador,EMC,Jaime Palmeros
 RARR,Reynolds Adonay Rosas Ruiz,Soldador,EMC,Rigo
-AGG,Adrian Gomez Gomez,Soldador,COBERTIZO,Barbas
-MVR,Magdaleno Vera Rios,Soldador,COBERTIZO,Barbas
+AGG,Adrian Gomez Gomez,Soldador,EMC,Barbas
+MVR,Magdaleno Vera Rios,Soldador,EMC,Barbas
 EVU,Elisandro Valerio Uriarte,Soldador,EMC,Rigo
-LOM,Lino Osorio Martinez,Soldador,COBERTIZO,Barbas
+LOM,Lino Osorio Martinez,Soldador,EMC,Barbas
 CAGH,Cesar Alfredo Gonzalez Hidalgo,Soldador,EMC,Jaime Palmeros
-AOSISA,Aosisa,Soldador,EMC,None
 OFP,Oscar Fernandez Peralta,Tubero,EMC,Rigo
 GJMC,Gaudencio De Jesus Montalvo Cortes,Tubero,COBERTIZO,Barbas
 JBHH,Jose Bruno Hernandez Hernandez,Tubero,EMC,Rigo
@@ -48,7 +47,6 @@ JAGS,Jose Antonio Gonzalez Sanchez,Tubero,EMC,Jaime Palmeros
 GGE,Gustavo Gonzalez Espiritu,Tubero,COBERTIZO,Barbas
 LFPG,Luis Felipe Perez  Garcia,Tubero,COBERTIZO,Barbas
 JFPL,Jose Francisco Pintado Leyva,Tubero,COBERTIZO,Barbas
-CAGH,Cesar Alfredo Gonzalez Hidalgo,Tubero,EMC,Jaime Palmeros
 IPP,Isaac Palma Palma,Soldador,SIN ASIGNAR,Sin asignar
 HMP,Hector Mendoza Palacios,Soldador,SIN ASIGNAR,Sin asignar
 CJME,Cirilo De Jesus Montero Esteban,Soldador,SIN ASIGNAR,Sin asignar
@@ -56,9 +54,11 @@ JPLP,Jose Pilar Lopez Perez,Soldador,SIN ASIGNAR,Sin asignar
 GGM,Genaro Garcia Hernandez,Soldador,SIN ASIGNAR,Sin asignar
 ADC,Alberto Diaz Cruz,Soldador,SIN ASIGNAR,Sin asignar
 AEC,Aaron Estrada Cruz,Soldador,SIN ASIGNAR,Sin asignar
+AOSISA,AOSISA,Soldador,SIN ASIGNAR,Sin asignar
 GGH,GGH,Soldador,SIN ASIGNAR,Sin asignar
 JLMC,JLMC,Soldador,SIN ASIGNAR,Sin asignar
 RIH,RIH,Soldador,SIN ASIGNAR,Sin asignar
 SETTSA,SETTSA,Soldador,SIN ASIGNAR,Sin asignar
-46327,46327,Tubero,SIN ASIGNAR,Sin asignar
-AOSISA,Aosisa,Tubero,SIN ASIGNAR,Sin asignar
+AOSISA,AOSISA,Tubero,SIN ASIGNAR,Sin asignar
+JVM,JVM,Tubero,SIN ASIGNAR,Sin asignar
+SETTSA,SETTSA,Tubero,SIN ASIGNAR,Sin asignar
