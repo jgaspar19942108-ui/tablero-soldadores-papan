@@ -495,3 +495,101 @@ dash.calc('curva_reprog', {
     return out;
   },
 });
+
+dash.calc('estandar_diametro', {
+  inputs: ['juntas'],
+  title: 'Rendimiento estándar por diámetro',
+  description: 'Juntas por persona-día que rinde normalmente la obra en cada rango de diámetro, para soldadores (soldadura) y tuberos (armado). Se ajusta con todo el registro: cada persona-día trabajado se explica como la suma del tiempo de sus juntas según su diámetro (mínimos cuadrados no negativos), se fuerza a que una junta más grande nunca tome menos tiempo que una más chica, y se escala para que el promedio de la obra en todo el registro sea exactamente 100%. "Peso" expresa cada rango en juntas equivalentes de 2".',
+  fn: (juntas) => {
+    const CL = [['≤ 1"', 0, 1], ['1½" – 2"', 1, 2], ['3" – 4"', 2, 4], ['6" – 8"', 4, 8], ['10" – 12"', 8, 12], ['14" y mayores', 12, 99]];
+    const cls = (d) => CL.findIndex(([, a, b]) => d > a && d <= b);
+    const J = juntas.filter((r) => r.cancelada !== 'si' && Number(r.diam) > 0);
+    const out = [];
+    for (const [rol, kf, df] of [['Soldador', 'soldador', 'fecha_soldadura'], ['Tubero', 'tubero', 'fecha_fitup']]) {
+      const pd = new Map();
+      J.filter((r) => r[kf] && r[df]).forEach((r) => {
+        const k = r[kf] + '|' + r[df];
+        const v = pd.get(k) || new Array(CL.length).fill(0);
+        v[cls(Number(r.diam))]++; pd.set(k, v);
+      });
+      const A = [...pd.values()];
+      const n = CL.map((_, c) => A.reduce((t, a) => t + a[c], 0));
+      const t = CL.map(() => A.length / Math.max(1, A.reduce((s, a) => s + a.reduce((x, y) => x + y, 0), 0)));
+      const ss = CL.map((_, c) => A.reduce((s, a) => s + a[c] * a[c], 0));
+      for (let it = 0; it < 400; it++) {
+        for (let c = 0; c < CL.length; c++) {
+          if (!ss[c]) continue;
+          let g = 0;
+          A.forEach((a) => { if (a[c]) g += a[c] * (1 - a.reduce((s, x, k) => s + x * t[k], 0)); });
+          t[c] = Math.max(0, t[c] + g / ss[c]);
+        }
+      }
+      for (let c = 1; c < CL.length; c++) if (!n[c] || t[c] < t[c - 1]) t[c] = Math.max(t[c], t[c - 1]);
+      for (let c = 0; c < CL.length; c++) if (!t[c]) t[c] = c ? t[c - 1] : 1 / 20;
+      const tot = A.reduce((s, a) => s + a.reduce((x, v, k) => x + v * t[k], 0), 0);
+      for (let c = 0; c < CL.length; c++) t[c] *= A.length / tot;
+      CL.forEach(([clase, dmin, dmax], c) => out.push({
+        rol, orden: c + 1, clase, dmin, dmax, juntas: n[c], persona_dias: A.length,
+        dias_por_junta: t[c], juntas_dia_std: 1 / t[c], peso: t[c] / t[1],
+      }));
+    }
+    return out;
+  },
+});
+
+dash.calc('rend_junta', {
+  inputs: ['juntas', 'personal'],
+  title: 'Rendimiento por junta ajustado por diámetro',
+  description: 'Para cada soldador y tubero y cada periodo: juntas hechas, juntas por día, juntas equivalentes de 2" (cada junta pesa según el tiempo estándar de su diámetro) y el índice de rendimiento = juntas hechas contra las que haría en los mismos días un trabajador promedio de la obra con la misma mezcla de diámetros (100% = promedio).',
+  fn: (juntas, personal) => {
+    const CL = [[0, 1], [1, 2], [2, 4], [4, 8], [8, 12], [12, 99]];
+    const cls = (d) => CL.findIndex(([a, b]) => d > a && d <= b);
+    const D = (s) => new Date(s + 'T00:00:00Z');
+    const iso = (x) => x.toISOString().slice(0, 10);
+    const add = (s, k) => iso(new Date(D(s).getTime() + k * 864e5));
+    const J = juntas.filter((r) => r.cancelada !== 'si' && Number(r.diam) > 0);
+    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
+    const max = f[f.length - 1], min = f[0];
+    const lunes = add(max, -((D(max).getUTCDay() + 6) % 7));
+    const P = [['semana', lunes, max], ['4sem', add(max, -27), max], ['todo', min, max]];
+    const inR = (x, a, b) => !!x && x >= a && x <= b;
+    const out = [];
+    for (const [rol, kf, df] of [['Soldador', 'soldador', 'fecha_soldadura'], ['Tubero', 'tubero', 'fecha_fitup']]) {
+      const K = J.filter((r) => r[kf] && r[df]);
+      const pd = new Map();
+      K.forEach((r) => { const k = r[kf] + '|' + r[df]; const v = pd.get(k) || new Array(CL.length).fill(0); v[cls(Number(r.diam))]++; pd.set(k, v); });
+      const A = [...pd.values()];
+      const t = CL.map(() => A.length / Math.max(1, K.length));
+      const ss = CL.map((_, c) => A.reduce((s, a) => s + a[c] * a[c], 0));
+      for (let it = 0; it < 400; it++) for (let c = 0; c < CL.length; c++) {
+        if (!ss[c]) continue;
+        let g = 0;
+        A.forEach((a) => { if (a[c]) g += a[c] * (1 - a.reduce((s, x, k) => s + x * t[k], 0)); });
+        t[c] = Math.max(0, t[c] + g / ss[c]);
+      }
+      for (let c = 1; c < CL.length; c++) if (t[c] < t[c - 1]) t[c] = t[c - 1];
+      for (let c = 0; c < CL.length; c++) if (!t[c]) t[c] = c ? t[c - 1] : 1 / 20;
+      const tot = A.reduce((s, a) => s + a.reduce((x, v, k) => x + v * t[k], 0), 0);
+      for (let c = 0; c < CL.length; c++) t[c] *= A.length / tot;
+      const roster = personal.filter((p) => p.rol === rol);
+      for (const [periodo, desde, hasta] of P) {
+        const g = {};
+        K.filter((r) => inR(r[df], desde, hasta)).forEach((r) => (g[r[kf]] ??= []).push(r));
+        for (const [clave, a] of Object.entries(g)) {
+          const p = roster.find((x) => x.clave === clave) || {};
+          const dias = new Set(a.map((r) => r[df])).size;
+          const std = a.reduce((s, r) => s + t[cls(Number(r.diam))], 0);
+          const pulg = a.reduce((s, r) => s + Number(r.diam), 0);
+          out.push({
+            rol, periodo, clave, nombre: p.nombre || clave, frente: p.frente || 'SIN ASIGNAR', responsable: p.responsable || 'Sin asignar',
+            juntas: a.length, dias, juntas_dia: a.length / dias, diam_prom: pulg / a.length,
+            juntas_eq: std / t[1], juntas_eq_dia: std / t[1] / dias,
+            juntas_esperadas: dias * a.length / std, indice: std / dias,
+            chicas: a.filter((r) => Number(r.diam) <= 2).length, grandes: a.filter((r) => Number(r.diam) >= 10).length,
+          });
+        }
+      }
+    }
+    return out.sort((x, y) => y.indice - x.indice);
+  },
+});

@@ -54,6 +54,9 @@
 .cm-heat td.z { color: var(--color-fg-muted); }
 .cm-heat td.tot { font-weight: 600; background: transparent; }
 .cm-page[hidden] { display: none !important; }
+.cm-rank-track.ref { position: relative; overflow: visible; }
+.cm-rank-track.ref .cm-ref { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 1.5px dashed var(--color-fg-muted); }
+.cm-std td.w { color: var(--color-fg-muted); }
 .cm-embudo { display: flex; flex-direction: column; gap: var(--cds-gap-md); min-height: 120px; }
 .cm-emb-row { display: grid; grid-template-columns: minmax(7rem, 11rem) 1fr; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: center; font-size: var(--cds-font-size-caption); }
 .cm-emb-row b { font-size: var(--cds-font-size-body); font-weight: 600; }
@@ -198,11 +201,23 @@
         <p class="cm-note">Cada celda es lo que soldó ese día; la última columna, el total de la semana.</p>
         <div class="cm-heat" id="hm-sold" data-source="mapa_semana"></div>
       </div>
+      <div class="cm-card" id="card-idx-s">
+        <h3>Índice de rendimiento por junta · <span class="cm-per-name">semana en curso</span></h3>
+        <p class="cm-note">Juntas soldadas contra las que soldaría en los mismos días un soldador promedio de la obra con la misma mezcla de diámetros. 100% (línea punteada) = promedio de la obra; arriba de 100% rinde más. A la derecha, juntas por día y diámetro promedio. Atenuados: menos de 3 días trabajados (dato indicativo).</p>
+        <div class="cm-legend" id="leg-idx-s"></div>
+        <div class="cm-rank" id="rk-idx-s" data-source="rend_junta"></div>
+      </div>
+      <div class="cm-card" id="card-std-s">
+        <h3>Estándar de la obra por diámetro · soldadores</h3>
+        <p class="cm-note">Juntas por persona-día que rinde un soldador promedio en cada rango, calculado con todo el registro. El peso convierte cada junta a juntas equivalentes de 2" (una de 12" cuenta como varias de 2").</p>
+        <div class="cm-tablebox"><table class="cm-table cm-std" id="tb-std-s" data-source="estandar_diametro" data-row-key="rol,orden">
+          <thead><tr><th class="t" data-field="clase">Diámetro</th><th data-field="juntas">Juntas en registro</th><th data-field="juntas_dia_std">Juntas por día (estándar)</th><th data-field="peso">Peso (juntas eq. 2")</th></tr></thead><tbody></tbody></table></div>
+      </div>
       <div class="cm-card wide" id="card-tb-s">
         <h3>Detalle por soldador · <span class="cm-per-name">semana en curso</span></h3>
         <input class="cm-search" type="search" placeholder="Buscar soldador…" aria-label="Buscar soldador" id="q-sold">
         <div class="cm-tablebox"><table class="cm-table" id="tb-sold" data-source="soldadores" data-row-key="periodo,clave">
-          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="pct_campo">% campo</th><th data-field="rt_rechazadas">RT rech.</th><th data-field="pct_rechazo">% rechazo RT</th></tr></thead><tbody></tbody></table></div>
+          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="juntas_dia">Juntas/día</th><th data-field="juntas_eq">Juntas eq. 2"</th><th data-field="indice">Índice</th><th data-field="pct_campo">% campo</th><th data-field="rt_rechazadas">RT rech.</th><th data-field="pct_rechazo">% rechazo RT</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
   </section>
@@ -227,11 +242,23 @@
         <p class="cm-note">Cada celda es lo que armó ese día; la última columna, el total de la semana.</p>
         <div class="cm-heat" id="hm-tub" data-source="mapa_semana"></div>
       </div>
+      <div class="cm-card" id="card-idx-t">
+        <h3>Índice de rendimiento por junta · <span class="cm-per-name">semana en curso</span></h3>
+        <p class="cm-note">Juntas armadas contra las que armaría en los mismos días un tubero promedio de la obra con la misma mezcla de diámetros. 100% (línea punteada) = promedio de la obra; arriba de 100% rinde más. A la derecha, juntas por día y diámetro promedio. Atenuados: menos de 3 días trabajados (dato indicativo).</p>
+        <div class="cm-legend" id="leg-idx-t"></div>
+        <div class="cm-rank" id="rk-idx-t" data-source="rend_junta"></div>
+      </div>
+      <div class="cm-card" id="card-std-t">
+        <h3>Estándar de la obra por diámetro · tuberoes</h3>
+        <p class="cm-note">Juntas por persona-día que rinde un tubero promedio en cada rango, calculado con todo el registro. El peso convierte cada junta a juntas equivalentes de 2" (una de 12" cuenta como varias de 2").</p>
+        <div class="cm-tablebox"><table class="cm-table cm-std" id="tb-std-t" data-source="estandar_diametro" data-row-key="rol,orden">
+          <thead><tr><th class="t" data-field="clase">Diámetro</th><th data-field="juntas">Juntas en registro</th><th data-field="juntas_dia_std">Juntas por día (estándar)</th><th data-field="peso">Peso (juntas eq. 2")</th></tr></thead><tbody></tbody></table></div>
+      </div>
       <div class="cm-card wide" id="card-tb-t">
         <h3>Detalle por tubero · <span class="cm-per-name">semana en curso</span></h3>
         <input class="cm-search" type="search" placeholder="Buscar tubero…" aria-label="Buscar tubero" id="q-tub">
         <div class="cm-tablebox"><table class="cm-table" id="tb-tub" data-source="tuberos" data-row-key="periodo,clave">
-          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="juntas_ya_soldadas">Ya soldadas</th><th data-field="pct_soldado">% soldado</th></tr></thead><tbody></tbody></table></div>
+          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="juntas_dia">Juntas/día</th><th data-field="juntas_eq">Juntas eq. 2"</th><th data-field="indice">Índice</th><th data-field="juntas_ya_soldadas">Ya soldadas</th><th data-field="pct_soldado">% soldado</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
   </section>

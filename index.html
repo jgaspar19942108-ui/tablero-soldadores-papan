@@ -83,6 +83,9 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 .cm-heat td.z { color: var(--color-fg-muted); }
 .cm-heat td.tot { font-weight: 600; background: transparent; }
 .cm-page[hidden] { display: none !important; }
+.cm-rank-track.ref { position: relative; overflow: visible; }
+.cm-rank-track.ref .cm-ref { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 1.5px dashed var(--color-fg-muted); }
+.cm-std td.w { color: var(--color-fg-muted); }
 .cm-embudo { display: flex; flex-direction: column; gap: var(--cds-gap-md); min-height: 120px; }
 .cm-emb-row { display: grid; grid-template-columns: minmax(7rem, 11rem) 1fr; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: center; font-size: var(--cds-font-size-caption); }
 .cm-emb-row b { font-size: var(--cds-font-size-body); font-weight: 600; }
@@ -227,11 +230,23 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
         <p class="cm-note">Cada celda es lo que soldó ese día; la última columna, el total de la semana.</p>
         <div class="cm-heat" id="hm-sold" data-source="mapa_semana"></div>
       </div>
+      <div class="cm-card" id="card-idx-s">
+        <h3>Índice de rendimiento por junta · <span class="cm-per-name">semana en curso</span></h3>
+        <p class="cm-note">Juntas soldadas contra las que soldaría en los mismos días un soldador promedio de la obra con la misma mezcla de diámetros. 100% (línea punteada) = promedio de la obra; arriba de 100% rinde más. A la derecha, juntas por día y diámetro promedio. Atenuados: menos de 3 días trabajados (dato indicativo).</p>
+        <div class="cm-legend" id="leg-idx-s"></div>
+        <div class="cm-rank" id="rk-idx-s" data-source="rend_junta"></div>
+      </div>
+      <div class="cm-card" id="card-std-s">
+        <h3>Estándar de la obra por diámetro · soldadores</h3>
+        <p class="cm-note">Juntas por persona-día que rinde un soldador promedio en cada rango, calculado con todo el registro. El peso convierte cada junta a juntas equivalentes de 2" (una de 12" cuenta como varias de 2").</p>
+        <div class="cm-tablebox"><table class="cm-table cm-std" id="tb-std-s" data-source="estandar_diametro" data-row-key="rol,orden">
+          <thead><tr><th class="t" data-field="clase">Diámetro</th><th data-field="juntas">Juntas en registro</th><th data-field="juntas_dia_std">Juntas por día (estándar)</th><th data-field="peso">Peso (juntas eq. 2")</th></tr></thead><tbody></tbody></table></div>
+      </div>
       <div class="cm-card wide" id="card-tb-s">
         <h3>Detalle por soldador · <span class="cm-per-name">semana en curso</span></h3>
         <input class="cm-search" type="search" placeholder="Buscar soldador…" aria-label="Buscar soldador" id="q-sold">
         <div class="cm-tablebox"><table class="cm-table" id="tb-sold" data-source="soldadores" data-row-key="periodo,clave">
-          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="pct_campo">% campo</th><th data-field="rt_rechazadas">RT rech.</th><th data-field="pct_rechazo">% rechazo RT</th></tr></thead><tbody></tbody></table></div>
+          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="juntas_dia">Juntas/día</th><th data-field="juntas_eq">Juntas eq. 2"</th><th data-field="indice">Índice</th><th data-field="pct_campo">% campo</th><th data-field="rt_rechazadas">RT rech.</th><th data-field="pct_rechazo">% rechazo RT</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
   </section>
@@ -256,11 +271,23 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
         <p class="cm-note">Cada celda es lo que armó ese día; la última columna, el total de la semana.</p>
         <div class="cm-heat" id="hm-tub" data-source="mapa_semana"></div>
       </div>
+      <div class="cm-card" id="card-idx-t">
+        <h3>Índice de rendimiento por junta · <span class="cm-per-name">semana en curso</span></h3>
+        <p class="cm-note">Juntas armadas contra las que armaría en los mismos días un tubero promedio de la obra con la misma mezcla de diámetros. 100% (línea punteada) = promedio de la obra; arriba de 100% rinde más. A la derecha, juntas por día y diámetro promedio. Atenuados: menos de 3 días trabajados (dato indicativo).</p>
+        <div class="cm-legend" id="leg-idx-t"></div>
+        <div class="cm-rank" id="rk-idx-t" data-source="rend_junta"></div>
+      </div>
+      <div class="cm-card" id="card-std-t">
+        <h3>Estándar de la obra por diámetro · tuberoes</h3>
+        <p class="cm-note">Juntas por persona-día que rinde un tubero promedio en cada rango, calculado con todo el registro. El peso convierte cada junta a juntas equivalentes de 2" (una de 12" cuenta como varias de 2").</p>
+        <div class="cm-tablebox"><table class="cm-table cm-std" id="tb-std-t" data-source="estandar_diametro" data-row-key="rol,orden">
+          <thead><tr><th class="t" data-field="clase">Diámetro</th><th data-field="juntas">Juntas en registro</th><th data-field="juntas_dia_std">Juntas por día (estándar)</th><th data-field="peso">Peso (juntas eq. 2")</th></tr></thead><tbody></tbody></table></div>
+      </div>
       <div class="cm-card wide" id="card-tb-t">
         <h3>Detalle por tubero · <span class="cm-per-name">semana en curso</span></h3>
         <input class="cm-search" type="search" placeholder="Buscar tubero…" aria-label="Buscar tubero" id="q-tub">
         <div class="cm-tablebox"><table class="cm-table" id="tb-tub" data-source="tuberos" data-row-key="periodo,clave">
-          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="juntas_ya_soldadas">Ya soldadas</th><th data-field="pct_soldado">% soldado</th></tr></thead><tbody></tbody></table></div>
+          <thead><tr><th class="t" data-field="clave">Clave</th><th class="t" data-field="nombre">Nombre</th><th class="t" data-field="frente">Frente</th><th class="t" data-field="responsable">Responsable</th><th data-field="juntas">Juntas</th><th data-field="pulg">Pulg-Ø</th><th data-field="dias">Días</th><th data-field="pulg_dia">Pulg/día</th><th data-field="diam_prom">Ø prom.</th><th data-field="juntas_dia">Juntas/día</th><th data-field="juntas_eq">Juntas eq. 2"</th><th data-field="indice">Índice</th><th data-field="juntas_ya_soldadas">Ya soldadas</th><th data-field="pct_soldado">% soldado</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
   </section>
@@ -323,7 +350,7 @@ html, body { margin:0; background:var(--color-bg); color:var(--color-fg); font-f
 </div>
 
 
-<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 08/11/2026 13:06 (hora de México)</p>
+<p class="pub-foot">Fuente: Control Maestro (Weld Log, Métricas, Resumen RT y PT, Curva S) · Actualizado 08/11/2026 13:16 (hora de México)</p>
 </div>
 <script>
 window.dash = (() => {
@@ -848,6 +875,104 @@ dash.calc('curva_reprog', {
     return out;
   },
 });
+
+dash.calc('estandar_diametro', {
+  inputs: ['juntas'],
+  title: 'Rendimiento estándar por diámetro',
+  description: 'Juntas por persona-día que rinde normalmente la obra en cada rango de diámetro, para soldadores (soldadura) y tuberos (armado). Se ajusta con todo el registro: cada persona-día trabajado se explica como la suma del tiempo de sus juntas según su diámetro (mínimos cuadrados no negativos), se fuerza a que una junta más grande nunca tome menos tiempo que una más chica, y se escala para que el promedio de la obra en todo el registro sea exactamente 100%. "Peso" expresa cada rango en juntas equivalentes de 2".',
+  fn: (juntas) => {
+    const CL = [['≤ 1"', 0, 1], ['1½" – 2"', 1, 2], ['3" – 4"', 2, 4], ['6" – 8"', 4, 8], ['10" – 12"', 8, 12], ['14" y mayores', 12, 99]];
+    const cls = (d) => CL.findIndex(([, a, b]) => d > a && d <= b);
+    const J = juntas.filter((r) => r.cancelada !== 'si' && Number(r.diam) > 0);
+    const out = [];
+    for (const [rol, kf, df] of [['Soldador', 'soldador', 'fecha_soldadura'], ['Tubero', 'tubero', 'fecha_fitup']]) {
+      const pd = new Map();
+      J.filter((r) => r[kf] && r[df]).forEach((r) => {
+        const k = r[kf] + '|' + r[df];
+        const v = pd.get(k) || new Array(CL.length).fill(0);
+        v[cls(Number(r.diam))]++; pd.set(k, v);
+      });
+      const A = [...pd.values()];
+      const n = CL.map((_, c) => A.reduce((t, a) => t + a[c], 0));
+      const t = CL.map(() => A.length / Math.max(1, A.reduce((s, a) => s + a.reduce((x, y) => x + y, 0), 0)));
+      const ss = CL.map((_, c) => A.reduce((s, a) => s + a[c] * a[c], 0));
+      for (let it = 0; it < 400; it++) {
+        for (let c = 0; c < CL.length; c++) {
+          if (!ss[c]) continue;
+          let g = 0;
+          A.forEach((a) => { if (a[c]) g += a[c] * (1 - a.reduce((s, x, k) => s + x * t[k], 0)); });
+          t[c] = Math.max(0, t[c] + g / ss[c]);
+        }
+      }
+      for (let c = 1; c < CL.length; c++) if (!n[c] || t[c] < t[c - 1]) t[c] = Math.max(t[c], t[c - 1]);
+      for (let c = 0; c < CL.length; c++) if (!t[c]) t[c] = c ? t[c - 1] : 1 / 20;
+      const tot = A.reduce((s, a) => s + a.reduce((x, v, k) => x + v * t[k], 0), 0);
+      for (let c = 0; c < CL.length; c++) t[c] *= A.length / tot;
+      CL.forEach(([clase, dmin, dmax], c) => out.push({
+        rol, orden: c + 1, clase, dmin, dmax, juntas: n[c], persona_dias: A.length,
+        dias_por_junta: t[c], juntas_dia_std: 1 / t[c], peso: t[c] / t[1],
+      }));
+    }
+    return out;
+  },
+});
+
+dash.calc('rend_junta', {
+  inputs: ['juntas', 'personal'],
+  title: 'Rendimiento por junta ajustado por diámetro',
+  description: 'Para cada soldador y tubero y cada periodo: juntas hechas, juntas por día, juntas equivalentes de 2" (cada junta pesa según el tiempo estándar de su diámetro) y el índice de rendimiento = juntas hechas contra las que haría en los mismos días un trabajador promedio de la obra con la misma mezcla de diámetros (100% = promedio).',
+  fn: (juntas, personal) => {
+    const CL = [[0, 1], [1, 2], [2, 4], [4, 8], [8, 12], [12, 99]];
+    const cls = (d) => CL.findIndex(([a, b]) => d > a && d <= b);
+    const D = (s) => new Date(s + 'T00:00:00Z');
+    const iso = (x) => x.toISOString().slice(0, 10);
+    const add = (s, k) => iso(new Date(D(s).getTime() + k * 864e5));
+    const J = juntas.filter((r) => r.cancelada !== 'si' && Number(r.diam) > 0);
+    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
+    const max = f[f.length - 1], min = f[0];
+    const lunes = add(max, -((D(max).getUTCDay() + 6) % 7));
+    const P = [['semana', lunes, max], ['4sem', add(max, -27), max], ['todo', min, max]];
+    const inR = (x, a, b) => !!x && x >= a && x <= b;
+    const out = [];
+    for (const [rol, kf, df] of [['Soldador', 'soldador', 'fecha_soldadura'], ['Tubero', 'tubero', 'fecha_fitup']]) {
+      const K = J.filter((r) => r[kf] && r[df]);
+      const pd = new Map();
+      K.forEach((r) => { const k = r[kf] + '|' + r[df]; const v = pd.get(k) || new Array(CL.length).fill(0); v[cls(Number(r.diam))]++; pd.set(k, v); });
+      const A = [...pd.values()];
+      const t = CL.map(() => A.length / Math.max(1, K.length));
+      const ss = CL.map((_, c) => A.reduce((s, a) => s + a[c] * a[c], 0));
+      for (let it = 0; it < 400; it++) for (let c = 0; c < CL.length; c++) {
+        if (!ss[c]) continue;
+        let g = 0;
+        A.forEach((a) => { if (a[c]) g += a[c] * (1 - a.reduce((s, x, k) => s + x * t[k], 0)); });
+        t[c] = Math.max(0, t[c] + g / ss[c]);
+      }
+      for (let c = 1; c < CL.length; c++) if (t[c] < t[c - 1]) t[c] = t[c - 1];
+      for (let c = 0; c < CL.length; c++) if (!t[c]) t[c] = c ? t[c - 1] : 1 / 20;
+      const tot = A.reduce((s, a) => s + a.reduce((x, v, k) => x + v * t[k], 0), 0);
+      for (let c = 0; c < CL.length; c++) t[c] *= A.length / tot;
+      const roster = personal.filter((p) => p.rol === rol);
+      for (const [periodo, desde, hasta] of P) {
+        const g = {};
+        K.filter((r) => inR(r[df], desde, hasta)).forEach((r) => (g[r[kf]] ??= []).push(r));
+        for (const [clave, a] of Object.entries(g)) {
+          const p = roster.find((x) => x.clave === clave) || {};
+          const dias = new Set(a.map((r) => r[df])).size;
+          const std = a.reduce((s, r) => s + t[cls(Number(r.diam))], 0);
+          const pulg = a.reduce((s, r) => s + Number(r.diam), 0);
+          out.push({
+            rol, periodo, clave, nombre: p.nombre || clave, frente: p.frente || 'SIN ASIGNAR', responsable: p.responsable || 'Sin asignar',
+            juntas: a.length, dias, juntas_dia: a.length / dias, diam_prom: pulg / a.length,
+            juntas_eq: std / t[1], juntas_eq_dia: std / t[1] / dias,
+            juntas_esperadas: dias * a.length / std, indice: std / dias,
+            chicas: a.filter((r) => Number(r.diam) <= 2).length, grandes: a.filter((r) => Number(r.diam) >= 10).length,
+          });
+        }
+      }
+    }
+    return out.sort((x, y) => y.indice - x.indice);
+  },
+});
 </script>
 <script>(() => {
   const root = document.querySelector('.cm');
@@ -1213,17 +1338,40 @@ dash.calc('curva_reprog', {
         valTxt: (r) => fInt(r.pulg), valSub: (r) => (r.pulg_dia != null ? fDec(r.pulg_dia) + '/día' : 'sin producción'),
       });
     }
+    // índice por junta ajustado por diámetro
+    const rol = S ? 'Soldador' : 'Tubero';
+    const k = S ? 's' : 't';
+    const ri = document.getElementById('rk-idx-' + k);
+    const OK = color(0), MID = 'var(--cds-chart-muted)', LOW = 'var(--cds-chart-status-critical)';
+    legend(document.getElementById('leg-idx-' + k), [[OK, '100% o más'], [MID, '80% – 100%'], [LOW, 'menos de 80%']]);
+    const RJ = rowsOf('rend_junta').filter((r) => r.rol === rol && r.periodo === p);
+    if (prep(ri, ['rend_junta'])) {
+      const m = Math.max(1.5, d3.max(RJ, (r) => r.indice) || 1);
+      rank(ri, RJ, {
+        label: (r) => r.clave, sub: (r) => ' ' + (r.responsable === 'Sin asignar' ? '' : r.responsable) + ` · ${r.dias} d`,
+        value: (r) => r.indice, max: m, colorOf: (r) => (r.indice >= 1 ? OK : r.indice >= 0.8 ? MID : LOW),
+        valTxt: (r) => d3.format('.0%')(r.indice), valSub: (r) => `${fDec(r.juntas_dia)} jtas/día · Ø ${fDec(r.diam_prom)}"`,
+      });
+      [...ri.querySelectorAll('.cm-rank-row')].forEach((row, i) => { if (RJ[i] && RJ[i].dias < 3) row.style.opacity = '0.55'; });
+      ri.querySelectorAll('.cm-rank-track').forEach((tr) => { tr.classList.add('ref'); const l = document.createElement('div'); l.className = 'cm-ref'; l.style.left = (100 / m) + '%'; tr.append(l); });
+      if (!RJ.length) { const n = document.createElement('p'); n.className = 'cm-note'; n.textContent = 'Sin juntas con clave en este periodo.'; ri.append(n); }
+    }
+    const ts = document.getElementById('tb-std-' + k);
+    if (tableState(ts, ['estandar_diametro'])) {
+      table(ts.id, rowsOf('estandar_diametro').filter((r) => r.rol === rol), [{ f: 'clase', t: 1 }, { f: 'juntas', fmt: FMT.int }, { f: 'juntas_dia_std', fmt: FMT.dec }, { f: 'peso', fmt: (v) => (num(v) == null ? '—' : d3.format('.2f')(num(v))) }], ['rol', 'orden']);
+    } else ts.querySelector('tbody').replaceChildren();
+    const byKey = new Map(RJ.map((r) => [r.clave, r]));
     const t = document.getElementById(S ? 'tb-sold' : 'tb-tub');
-    if (tableState(t, [ds])) {
-      const cols = [{ f: 'clave', t: 1 }, { f: 'nombre', t: 1 }, { f: 'frente', t: 1, fmt: titleCase }, { f: 'responsable', t: 1 }, { f: 'juntas', fmt: FMT.int }, { f: 'pulg', fmt: FMT.dec }, { f: 'dias', fmt: FMT.int }, { f: 'pulg_dia', fmt: FMT.dec }, { f: 'diam_prom', fmt: FMT.dec }];
+    if (tableState(t, [ds, 'rend_junta'])) {
+      const cols = [{ f: 'clave', t: 1 }, { f: 'nombre', t: 1 }, { f: 'frente', t: 1, fmt: titleCase }, { f: 'responsable', t: 1 }, { f: 'juntas', fmt: FMT.int }, { f: 'pulg', fmt: FMT.dec }, { f: 'dias', fmt: FMT.int }, { f: 'pulg_dia', fmt: FMT.dec }, { f: 'diam_prom', fmt: FMT.dec }, { f: 'juntas_dia', fmt: FMT.dec }, { f: 'juntas_eq', fmt: FMT.dec }, { f: 'indice', fmt: (v) => (num(v) == null ? '—' : d3.format('.0%')(num(v))) }];
       if (S) cols.push({ f: 'pct_campo', fmt: FMT.pct }, { f: 'rt_rechazadas', fmt: FMT.int }, { f: 'pct_rechazo', fmt: FMT.pct });
       else cols.push({ f: 'juntas_ya_soldadas', fmt: FMT.int }, { f: 'pct_soldado', fmt: FMT.pct });
-      table(t.id, rowsOf(ds).filter((r) => r.periodo === p), cols, ['periodo', 'clave'], { idle: (r) => !r.juntas });
+      table(t.id, rowsOf(ds).filter((r) => r.periodo === p).map((r) => { const x = byKey.get(r.clave); return { ...r, juntas_dia: x ? x.juntas_dia : null, juntas_eq: x ? x.juntas_eq : null, indice: x ? x.indice : null }; }), cols, ['periodo', 'clave'], { idle: (r) => !r.juntas });
     } else t.querySelector('tbody').replaceChildren();
     // heatmap
     const hm = document.getElementById(S ? 'hm-sold' : 'hm-tub');
     if (!prep(hm, ['mapa_semana'])) return;
-    const rol = S ? 'Soldador' : 'Tubero';
+
     const cells = rowsOf('mapa_semana').filter((r) => r.rol === rol);
     const dias = [...new Set(cells.map((r) => r.dia))].sort();
     const tot = d3.rollup(cells, (v) => d3.sum(v, (r) => r.pulg), (r) => r.clave);

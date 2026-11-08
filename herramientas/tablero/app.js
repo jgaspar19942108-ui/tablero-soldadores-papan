@@ -362,17 +362,40 @@
         valTxt: (r) => fInt(r.pulg), valSub: (r) => (r.pulg_dia != null ? fDec(r.pulg_dia) + '/día' : 'sin producción'),
       });
     }
+    // índice por junta ajustado por diámetro
+    const rol = S ? 'Soldador' : 'Tubero';
+    const k = S ? 's' : 't';
+    const ri = document.getElementById('rk-idx-' + k);
+    const OK = color(0), MID = 'var(--cds-chart-muted)', LOW = 'var(--cds-chart-status-critical)';
+    legend(document.getElementById('leg-idx-' + k), [[OK, '100% o más'], [MID, '80% – 100%'], [LOW, 'menos de 80%']]);
+    const RJ = rowsOf('rend_junta').filter((r) => r.rol === rol && r.periodo === p);
+    if (prep(ri, ['rend_junta'])) {
+      const m = Math.max(1.5, d3.max(RJ, (r) => r.indice) || 1);
+      rank(ri, RJ, {
+        label: (r) => r.clave, sub: (r) => ' ' + (r.responsable === 'Sin asignar' ? '' : r.responsable) + ` · ${r.dias} d`,
+        value: (r) => r.indice, max: m, colorOf: (r) => (r.indice >= 1 ? OK : r.indice >= 0.8 ? MID : LOW),
+        valTxt: (r) => d3.format('.0%')(r.indice), valSub: (r) => `${fDec(r.juntas_dia)} jtas/día · Ø ${fDec(r.diam_prom)}"`,
+      });
+      [...ri.querySelectorAll('.cm-rank-row')].forEach((row, i) => { if (RJ[i] && RJ[i].dias < 3) row.style.opacity = '0.55'; });
+      ri.querySelectorAll('.cm-rank-track').forEach((tr) => { tr.classList.add('ref'); const l = document.createElement('div'); l.className = 'cm-ref'; l.style.left = (100 / m) + '%'; tr.append(l); });
+      if (!RJ.length) { const n = document.createElement('p'); n.className = 'cm-note'; n.textContent = 'Sin juntas con clave en este periodo.'; ri.append(n); }
+    }
+    const ts = document.getElementById('tb-std-' + k);
+    if (tableState(ts, ['estandar_diametro'])) {
+      table(ts.id, rowsOf('estandar_diametro').filter((r) => r.rol === rol), [{ f: 'clase', t: 1 }, { f: 'juntas', fmt: FMT.int }, { f: 'juntas_dia_std', fmt: FMT.dec }, { f: 'peso', fmt: (v) => (num(v) == null ? '—' : d3.format('.2f')(num(v))) }], ['rol', 'orden']);
+    } else ts.querySelector('tbody').replaceChildren();
+    const byKey = new Map(RJ.map((r) => [r.clave, r]));
     const t = document.getElementById(S ? 'tb-sold' : 'tb-tub');
-    if (tableState(t, [ds])) {
-      const cols = [{ f: 'clave', t: 1 }, { f: 'nombre', t: 1 }, { f: 'frente', t: 1, fmt: titleCase }, { f: 'responsable', t: 1 }, { f: 'juntas', fmt: FMT.int }, { f: 'pulg', fmt: FMT.dec }, { f: 'dias', fmt: FMT.int }, { f: 'pulg_dia', fmt: FMT.dec }, { f: 'diam_prom', fmt: FMT.dec }];
+    if (tableState(t, [ds, 'rend_junta'])) {
+      const cols = [{ f: 'clave', t: 1 }, { f: 'nombre', t: 1 }, { f: 'frente', t: 1, fmt: titleCase }, { f: 'responsable', t: 1 }, { f: 'juntas', fmt: FMT.int }, { f: 'pulg', fmt: FMT.dec }, { f: 'dias', fmt: FMT.int }, { f: 'pulg_dia', fmt: FMT.dec }, { f: 'diam_prom', fmt: FMT.dec }, { f: 'juntas_dia', fmt: FMT.dec }, { f: 'juntas_eq', fmt: FMT.dec }, { f: 'indice', fmt: (v) => (num(v) == null ? '—' : d3.format('.0%')(num(v))) }];
       if (S) cols.push({ f: 'pct_campo', fmt: FMT.pct }, { f: 'rt_rechazadas', fmt: FMT.int }, { f: 'pct_rechazo', fmt: FMT.pct });
       else cols.push({ f: 'juntas_ya_soldadas', fmt: FMT.int }, { f: 'pct_soldado', fmt: FMT.pct });
-      table(t.id, rowsOf(ds).filter((r) => r.periodo === p), cols, ['periodo', 'clave'], { idle: (r) => !r.juntas });
+      table(t.id, rowsOf(ds).filter((r) => r.periodo === p).map((r) => { const x = byKey.get(r.clave); return { ...r, juntas_dia: x ? x.juntas_dia : null, juntas_eq: x ? x.juntas_eq : null, indice: x ? x.indice : null }; }), cols, ['periodo', 'clave'], { idle: (r) => !r.juntas });
     } else t.querySelector('tbody').replaceChildren();
     // heatmap
     const hm = document.getElementById(S ? 'hm-sold' : 'hm-tub');
     if (!prep(hm, ['mapa_semana'])) return;
-    const rol = S ? 'Soldador' : 'Tubero';
+
     const cells = rowsOf('mapa_semana').filter((r) => r.rol === rol);
     const dias = [...new Set(cells.map((r) => r.dia))].sort();
     const tot = d3.rollup(cells, (v) => d3.sum(v, (r) => r.pulg), (r) => r.clave);
