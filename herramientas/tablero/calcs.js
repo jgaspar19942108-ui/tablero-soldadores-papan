@@ -593,3 +593,42 @@ dash.calc('rend_junta', {
     return out.sort((x, y) => y.indice - x.indice);
   },
 });
+
+dash.calc('areas', {
+  inputs: ['juntas'],
+  title: 'Avance por área',
+  description: 'Por área de la planta: juntas y pulgadas-Ø totales de la bitácora (Weld Log, sin canceladas; la hoja Volumenes no trae desglose por área), soldadas y pendientes, porcentaje de avance en juntas y en pulgadas-Ø, parte del pendiente total que representa el área, lo soldado en la semana en curso, juntas de campo pendientes, armadas sin soldar y BW/SW soldadas sin RT/PT; incluye una fila TOTAL.',
+  fn: (juntas) => {
+    const DESC = { 'A-1200': 'Entrada de gas húmedo amargo', 'A-1300': 'Separación y medición', 'A-1400': 'Endulzamiento y enfriamiento', 'A-1500': 'Rectificación de gas dulce', 'A-1600': 'Compresión', 'A-1700': 'Deshidratación por punto de rocío', 'A-1800': 'Separación drenaje de desfogue', 'A-1900': 'Regeneración de TEG', 'SK-2003': 'Quemador' };
+    const D = (s) => new Date(s + 'T00:00:00Z');
+    const iso = (t) => t.toISOString().slice(0, 10);
+    const add = (s, n) => iso(new Date(D(s).getTime() + n * 864e5));
+    const J = juntas.filter((r) => r.cancelada !== 'si');
+    const f = J.flatMap((r) => [r.fecha_soldadura, r.fecha_fitup]).filter(Boolean).sort();
+    const lunes = add(f[f.length - 1], -((D(f[f.length - 1]).getUTCDay() + 6) % 7));
+    const g = {};
+    const row = (k) => (g[k] ??= { area: k, descripcion: k === 'TOTAL' ? '' : DESC[k] || '', juntas_total: 0, juntas_soldadas: 0, pulg_total: 0, pulg_soldadas: 0, pulg_semana: 0, campo_pend: 0, armadas_sin_soldar: 0, rt_pend: 0, pt_pend: 0 });
+    J.forEach((r) => {
+      const d = Number(r.diam);
+      for (const o of [row(r.area || '(sin área)'), row('TOTAL')]) {
+        o.juntas_total++; o.pulg_total += d;
+        if (r.fecha_soldadura) {
+          o.juntas_soldadas++; o.pulg_soldadas += d;
+          if (r.fecha_soldadura >= lunes) o.pulg_semana += d;
+          if (r.tipo === 'BW' && !r.rt) o.rt_pend++;
+          if (r.tipo === 'SW' && !r.pt) o.pt_pend++;
+        } else {
+          if (r.tipo_junta === 'Campo') o.campo_pend++;
+          if (r.fecha_fitup) o.armadas_sin_soldar++;
+        }
+      }
+    });
+    const totPend = g.TOTAL ? g.TOTAL.pulg_total - g.TOTAL.pulg_soldadas : 0;
+    return Object.values(g).map((o) => ({ ...o,
+      juntas_pend: o.juntas_total - o.juntas_soldadas, pulg_pendientes: o.pulg_total - o.pulg_soldadas,
+      avance_juntas: o.juntas_total ? o.juntas_soldadas / o.juntas_total : null,
+      avance: o.pulg_total ? o.pulg_soldadas / o.pulg_total : null,
+      pct_del_pendiente: totPend ? (o.pulg_total - o.pulg_soldadas) / totPend : null }))
+      .sort((a, b) => (a.area === 'TOTAL') - (b.area === 'TOTAL') || b.pulg_pendientes - a.pulg_pendientes);
+  },
+});

@@ -63,8 +63,8 @@
 .cm-emb-bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; background: color-mix(in srgb, var(--color-border-line) 45%, transparent); }
 .cm-emb-bar div { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 .cm-emb-nums { grid-column: 2; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
-#tb-serv th, #tb-insp th { white-space: normal; vertical-align: bottom; }
-#tb-serv td { padding: 6px 6px; }
+#tb-serv th, #tb-area th, #tb-insp th { white-space: normal; vertical-align: bottom; }
+#tb-serv td, #tb-area td { padding: 6px 6px; }
 .cm-sec { display: flex; flex-direction: column; gap: var(--cds-gap-md); }
 .cm-sec h2 { margin: var(--cds-gap-sm) 0 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
 .cm-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
@@ -171,6 +171,12 @@
         <h3>Avance por servicio</h3>
         <p class="cm-note">Pulg-Ø soldadas contra el total de ingeniería (hoja Volumenes); ordenados por lo que falta.</p>
         <div class="cm-rank" id="rk-serv" data-source="servicios"></div>
+      </div>
+      <div class="cm-card wide" id="card-area-tabla">
+        <h3>Tabla de avance por área</h3>
+        <p class="cm-note">Por área de la planta, con totales de la bitácora (Weld Log, sin canceladas), porque la hoja Volumenes solo viene por servicio; por eso el total puede diferir del de la tabla por servicio. "% del pendiente" es la parte de las pulg-Ø que faltan en toda la obra que le toca a cada área. Ordenado por pulg-Ø pendientes.</p>
+        <div class="cm-tablebox" style="max-height:none"><table class="cm-table" id="tb-area" data-source="areas" data-row-key="area">
+          <thead><tr><th class="t" data-field="area">Área</th><th class="t" data-field="descripcion">Descripción</th><th data-field="juntas_total">Juntas total</th><th data-field="juntas_soldadas">Juntas soldadas</th><th data-field="juntas_pend">Juntas pend.</th><th data-field="avance_juntas">% juntas</th><th data-field="pulg_total">Pulg-Ø total</th><th data-field="pulg_soldadas">Pulg-Ø soldadas</th><th data-field="pulg_pendientes">Pulg-Ø pend.</th><th class="t" data-field="avance">Avance pulg-Ø</th><th data-field="pct_del_pendiente">% del pendiente</th><th data-field="pulg_semana">Semana</th><th data-field="campo_pend">Campo pend.</th><th data-field="armadas_sin_soldar">Armadas s/soldar</th><th data-field="rt_pend">Por RT</th><th data-field="pt_pend">Por PT</th></tr></thead><tbody></tbody></table></div>
       </div>
       <div class="cm-card wide" id="card-serv-tabla">
         <h3>Tabla de avance por servicio</h3>

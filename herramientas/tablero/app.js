@@ -293,6 +293,25 @@
     });
   };
 
+  const drawAreaTabla = () => {
+    const t = document.getElementById('tb-area');
+    if (!tableState(t, ['areas'])) { t.querySelector('tbody').replaceChildren(); return; }
+    const rows = rowsOf('areas');
+    const ci = 9;
+    table('tb-area', rows, [{ f: 'area', t: 1 }, { f: 'descripcion', t: 1, fmt: (v) => v || '—' }, { f: 'juntas_total', fmt: FMT.int }, { f: 'juntas_soldadas', fmt: FMT.int }, { f: 'juntas_pend', fmt: FMT.int }, { f: 'avance_juntas', fmt: FMT.pct }, { f: 'pulg_total', fmt: FMT.int }, { f: 'pulg_soldadas', fmt: FMT.int }, { f: 'pulg_pendientes', fmt: FMT.int }, { f: 'avance', t: 1, fmt: FMT.pct }, { f: 'pct_del_pendiente', fmt: FMT.pct }, { f: 'pulg_semana', fmt: FMT.int }, { f: 'campo_pend', fmt: FMT.int }, { f: 'armadas_sin_soldar', fmt: FMT.int }, { f: 'rt_pend', fmt: FMT.int }, { f: 'pt_pend', fmt: FMT.int }], ['area']);
+    t.querySelectorAll('tbody tr').forEach((tr) => {
+      const r = rows.find((x) => encodeURIComponent(x.area) === tr.dataset.key); if (!r) return;
+      const td = tr.children[ci];
+      if (r.avance == null) { td.textContent = '—'; return; }
+      const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:7rem';
+      const trk = document.createElement('div'); trk.className = 'cm-rank-track'; trk.style.flex = '1'; trk.style.height = '10px';
+      const fl = document.createElement('div'); fl.className = 'cm-rank-fill'; fl.style.width = (100 * Math.min(1, r.avance)) + '%'; fl.style.background = r.avance < 0.4 ? 'var(--cds-chart-status-critical)' : color(0); trk.append(fl);
+      const l = document.createElement('span'); l.textContent = fPct(r.avance); l.style.minWidth = '3.2rem'; l.style.textAlign = 'right';
+      w.append(trk, l); td.replaceChildren(w);
+      if (r.area === 'TOTAL') tr.style.fontWeight = '600';
+    });
+  };
+
   const drawServicios = () => {
     const el = document.getElementById('rk-serv');
     if (!prep(el, ['servicios'])) return;
@@ -519,7 +538,7 @@
   // ---------- draw ----------
   function draw() {
     fillMarks();
-    if (tab === 'resumen') { drawCurva(); drawSemanal(); drawDiario(); drawResp(); drawServicios(); drawServTabla(); }
+    if (tab === 'resumen') { drawCurva(); drawSemanal(); drawDiario(); drawResp(); drawServicios(); drawAreaTabla(); drawServTabla(); }
     if (tab === 'soldadores') drawPeople('sold');
     if (tab === 'tuberos') drawPeople('tub');
     if (tab === 'calidad') { drawInsp(); drawRT(); }
